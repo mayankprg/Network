@@ -8,5 +8,9 @@ urlpatterns = [
     path("login", views.login_view, name="login"),
     path("logout", views.logout_view, name="logout"),
     path("register", views.register, name="register"),
-    path("newpost", views.new_post, name="new")
+
+    # api
+    path("allpost", views.all_post, name="allpost"),
+    path("newpost", views.create_post, name="newpost"),
+    path("post/<int:post_id>", views.post, name="post"),
 ]
