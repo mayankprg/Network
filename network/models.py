@@ -46,7 +46,7 @@ class Comment(models.Model):
             "created": self.created.strftime("%b %d %Y, %I:%M %p"),
             "modified": self.modified.strftime("%b %d %Y, %I:%M %p"),
             "edited": self.edited,
-            "commentor":  self.commentor,
+            "commentor":  self.commentor.username,
         }
 
 

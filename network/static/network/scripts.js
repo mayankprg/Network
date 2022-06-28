@@ -37,13 +37,14 @@ async function create_post(post_data){
 
 
 
-async function edit_post(){
+async function edit_post(post_id){
+
     let data = document.querySelector('#ta-post').value;
 
-    return await fetch('/newpost', { 
-        method: "POST",
+    return await fetch(`/post/${post_id}`, { 
+        method: "PUT",
         body: JSON.stringify({
-            post: post_data
+            post: data
         })
     })
     
@@ -67,4 +68,29 @@ async function get_post(post_id){
     })
     let data = response.json();
     console.log(data);
+}
+
+async function comment(post_id){
+    try{
+        let response = await fetch(`/comment/${post_id}`, {
+            method: "GET"   
+        })
+        let data = await response.json();
+        console.log(data);
+    } catch (e){
+        console.log(e)
+    }
+}
+
+
+async function comments(post_id){
+    
+    await fetch(`/comment/${post_id}`, {
+        method: "POST",
+        body: JSON.stringify({
+            comment: "erojthk"
+        })   
+    })
+  
+    
 }

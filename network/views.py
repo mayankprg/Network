@@ -2,13 +2,13 @@ from django.contrib.auth import authenticate, login, logout
 import json
 from django.db import IntegrityError
 from django.contrib.auth.decorators import login_required
-from django.http import HttpResponse, HttpResponseRedirect
+from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseRedirect
 from django.shortcuts import render
 from django.urls import reverse
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 
-from .models import User, Post
+from .models import User, Post, Comment, Following
 
 
 def index(request):
@@ -71,6 +71,7 @@ def register(request):
 @login_required
 def all_post(request):
    
+   # get all post 
     if request.method == "GET":
         posts = Post.objects.all().order_by("created")
         return  JsonResponse([post.serialize() for post in posts], safe=False)
@@ -83,10 +84,12 @@ def create_post(request):
 
     if request.method == "POST":
 
+        # check for post length
         data = json.loads(request.body)
         if len(data.get("post")) < 1 or len(data.get("post")) > 280:
-            return JsonResponse({"error": "post "})
+            return JsonResponse({"error": "post length =  1 to 280"})
         
+        # save user's post 
         body = data.get("post")
         post = Post(body=body, author=request.user)
         post.save()
@@ -94,18 +97,67 @@ def create_post(request):
     else:
         return JsonResponse({"error": "only POST method"})
 
+
+@csrf_exempt
 @login_required
 def post(request, post_id):
+
     try:
         post = Post.objects.get(id=post_id)
-    except:
-        return JsonResponse({"no post"}, status=404)
+    except Post.DoesNotExist:
+        # no post found
+        return JsonResponse({"error": "No Post Found"}, status=404)
 
     if request.method == "GET":
+        # get particular post
         return JsonResponse(post.serialize())
 
+
     if request.method == "PUT":
-        
+
+        # ceck is user is post's author 
+        if request.user != post.author:
+            return JsonResponse({"error": "Not Authorised"}, status=403)
+
+        data = json.loads(request.body)
+
+        if len(data.get("post")) < 1 or len(data.get("post")) > 280:
+            return JsonResponse({"error": "post"}, status=400)
+
+        # save edited post 
+        post.body = data.get("post")
+        post.edited = True
+        post.save()
+        return HttpResponse(status=201)
+
+    return JsonResponse({"error": "only GET & PUT request accepted"}, status=405)
+
+
+
+@login_required
+@csrf_exempt
+def comment(request, post_id):
+
+    try:
+        post = Post.objects.get(pk=post_id)
+    except Post.DoesNotExist:
+        return JsonResponse({"error": "Post Doesn't Exists"}, status=400)
+
+
+    if request.method == "GET":
+        comments = Comment.objects.all()
+        print(comments[0].commentor)
+        return JsonResponse([comment.serialize() for comment in comments], safe=False)
+    
+    if request.method == "POST":
         data = json.loads(request.body)
         
-        post.body = 
+        if len(data.get("comment")) < 1 or len(data.get("comment")) > 380:
+            return HttpResponse(status=401)
+        
+        comment = Comment(comment=data.get("comment"), post=post, commentor=request.user)
+        comment.save()
+        print("saved")
+        return HttpResponse(status=201)
+    
+    return JsonResponse({"error": "POST & GET only"}, status=405)
