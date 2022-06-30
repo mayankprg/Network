@@ -8,7 +8,7 @@ from django.urls import reverse
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 
-from .models import User, Post, Comment, Following
+from .models import User, Post, Comment
 
 
 def index(request):
@@ -68,20 +68,18 @@ def register(request):
 
 
 
-@login_required
 def all_post(request):
-   
-   # get all post 
-    if request.method == "GET":
-        posts = Post.objects.all().order_by("created")
-        return  JsonResponse([post.serialize() for post in posts], safe=False)
+    """ get all posts """
+
+    posts = Post.objects.all().order_by("created")
+    return  JsonResponse([post.serialize() for post in posts], safe=False)
     
 
- 
 @csrf_exempt
 @login_required
 def create_post(request):
-
+    """ create new post """
+    
     if request.method == "POST":
 
         # check for post length
@@ -101,6 +99,7 @@ def create_post(request):
 @csrf_exempt
 @login_required
 def post(request, post_id):
+    """ get particular post or edit post """
 
     try:
         post = Post.objects.get(id=post_id)
@@ -111,7 +110,6 @@ def post(request, post_id):
     if request.method == "GET":
         # get particular post
         return JsonResponse(post.serialize())
-
 
     if request.method == "PUT":
 
@@ -133,31 +131,77 @@ def post(request, post_id):
     return JsonResponse({"error": "only GET & PUT request accepted"}, status=405)
 
 
-
-@login_required
 @csrf_exempt
+@login_required
 def comment(request, post_id):
+    """ get all comments or create a new comment """
 
     try:
         post = Post.objects.get(pk=post_id)
     except Post.DoesNotExist:
         return JsonResponse({"error": "Post Doesn't Exists"}, status=400)
 
-
     if request.method == "GET":
+
+        # get all comments for particular post
         comments = Comment.objects.all()
-        print(comments[0].commentor)
         return JsonResponse([comment.serialize() for comment in comments], safe=False)
     
     if request.method == "POST":
         data = json.loads(request.body)
         
-        if len(data.get("comment")) < 1 or len(data.get("comment")) > 380:
-            return HttpResponse(status=401)
+        if len(data.get("comment")) < 1 or len(data.get("comment")) > 300:
+            return HttpResponse(status=400)
         
+        # save new comment
         comment = Comment(comment=data.get("comment"), post=post, commentor=request.user)
         comment.save()
-        print("saved")
         return HttpResponse(status=201)
     
     return JsonResponse({"error": "POST & GET only"}, status=405)
+
+
+@csrf_exempt
+@login_required
+def edit_comment(request, comment_id):
+    """ Edit the exsiting comment """
+
+    try:
+        comment = Comment.objects.get(id=comment_id)
+    except Comment.DoesNotExist:
+        return JsonResponse({"error": "Comment Doesn't Exists"}, status=400)
+        
+    if request.method == "PUT":
+
+        # only for author of the comment
+        if comment.commentor != request.user:
+            return HttpResponse(status=403)
+
+        data = json.loads(request.body)
+
+        if len(data.get("comment")) < 1 or len(data.get("comment")) > 300:
+            return HttpResponse(status=400)
+
+        # save edited comment
+        comment.comment = data.get("comment")
+        comment.edited = True
+        comment.save()
+        return HttpResponse(status=201)
+
+    return JsonResponse({"error": "PUT only"}, status=405)
+
+
+# @login_required
+# def following(request):
+
+#     posts = Post.objects.all().filter(author=)
+
+
+@login_required
+def profile(request, user_id):
+
+    user = User.objects.get(id=user_id)
+
+    print(user.followers)
+
+

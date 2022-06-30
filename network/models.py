@@ -1,4 +1,3 @@
-from pyexpat import model
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
@@ -6,8 +5,7 @@ from django.db import models
 
 class User(AbstractUser):
 
-    def followers(self):
-        return self.followers.all().count()
+   followers = models.ManyToManyField("self", blank=True, null=True)
 
 
 class Post(models.Model):
@@ -23,6 +21,7 @@ class Post(models.Model):
         return {
             "id": self.id,
             "body": self.body,
+            "author": self.author.id,
             "created": self.created.strftime("%b %d %Y, %I:%M %p"),
             "modified": self.modified.strftime("%b %d %Y, %I:%M %p"),
             "edited": self.edited,
@@ -48,8 +47,3 @@ class Comment(models.Model):
             "edited": self.edited,
             "commentor":  self.commentor.username,
         }
-
-
-class Following(models.Model):
-    user = models.ForeignKey("User", on_delete=models.CASCADE, related_name="followers")
-    followers = models.ManyToManyField("User", related_name="following")

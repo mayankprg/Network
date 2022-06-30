@@ -51,8 +51,6 @@ async function edit_post(post_id){
 }
 
 
-
-
 async function all_post(){
    
     let response = await fetch('/allpost');
@@ -70,16 +68,15 @@ async function get_post(post_id){
     console.log(data);
 }
 
+
 async function comment(post_id){
-    try{
-        let response = await fetch(`/comment/${post_id}`, {
-            method: "GET"   
-        })
-        let data = await response.json();
-        console.log(data);
-    } catch (e){
-        console.log(e)
-    }
+   
+    let response = await fetch(`/comment/${post_id}`, {
+        method: "GET"   
+    })
+    let data = await response.json();
+    console.log(data);
+    
 }
 
 
@@ -93,4 +90,25 @@ async function comments(post_id){
     })
   
     
+}
+
+
+
+async function editcomment(comment_id){
+    
+    await fetch(`/editcomment/${comment_id}`, {
+        method: "PUT",
+        body: JSON.stringify({
+            comment: "commment edited"
+        })   
+    })
+  
+    
+}
+
+
+async function profile(user_id){
+    
+    await fetch(`/profile/${user_id}`)   
+   
 }
