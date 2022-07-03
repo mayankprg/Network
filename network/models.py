@@ -5,7 +5,15 @@ from django.db import models
 
 class User(AbstractUser):
 
-   followers = models.ManyToManyField("self", blank=True, null=True)
+    following = models.ManyToManyField("self", blank=True, null=True)
+
+    def serialize(self):
+        return {
+            "id": self.id,
+            "following": self.following.count(),
+            "followers": User.objects.filter(following=self).all().count(),
+            "posts": [post.serialize() for post in self.user_post.all()],
+        }
 
 
 class Post(models.Model):
@@ -31,6 +39,7 @@ class Post(models.Model):
 
 
 class Comment(models.Model):
+
     comment = models.TextField(max_length=300, null=False)
     post = models.ForeignKey("Post", on_delete=models.CASCADE, related_name="comments")
     commentor = models.ForeignKey("User", on_delete=models.CASCADE, related_name="comment")

@@ -109,6 +109,8 @@ async function editcomment(comment_id){
 
 async function profile(user_id){
     
-    await fetch(`/profile/${user_id}`)   
-   
+    let res = await fetch(`/profile/${user_id}`)   
+    let data = await res.json()
+
+    console.log(data)
 }
