@@ -2,18 +2,14 @@
 
 {% block body %}
     {% if user.is_authenticated %}
-        <div id="post-">
+        <div id="post">
             <form>
                 <textarea name="post" id="ta-post" cols="50" rows="4"></textarea>
                 <input type="submit" value="submit" id="sb-post">
-                
             </form>
         </div>
-        <input type="button" value="hit" id="test">
     {% endif %}
     
-    <script type="text/babel">
-
-    </script>
+    <script src="{% static 'network/allPost.js' %}"></script>
 
 {% endblock %}

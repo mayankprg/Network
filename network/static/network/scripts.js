@@ -10,10 +10,29 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     document.querySelector('#sb-post').onclick = new_post;
-    
+
+   
 
 
 })
+
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            // Does this cookie string begin with the name we want?
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+const csrftoken = getCookie('csrftoken');
 
 
 async function new_post(event){
@@ -28,6 +47,7 @@ async function new_post(event){
 async function create_post(post_data){
     return await fetch('/newpost', { 
         method: "POST",
+        headers: {'X-CSRFToken': csrftoken},
         body: JSON.stringify({
             post: post_data
         })
@@ -51,9 +71,9 @@ async function edit_post(post_id){
 }
 
 
-async function all_post(){
+async function all_posts(page){
    
-    let response = await fetch('/allpost');
+    let response = await fetch(`/allposts/${page}`);
     let data = await response.json();
     console.log(data)
    
@@ -110,6 +130,18 @@ async function editcomment(comment_id){
 async function profile(user_id){
     
     let res = await fetch(`/profile/${user_id}`)   
+    let data = await res.json()
+
+    console.log(data)
+}
+
+
+
+async function follow(user_id){
+    
+    let res = await fetch(`/following/${user_id}`, {
+        method: "POST"
+    })   
     let data = await res.json()
 
     console.log(data)

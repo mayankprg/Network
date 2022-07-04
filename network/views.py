@@ -67,26 +67,34 @@ def register(request):
         return render(request, "network/register.html")
 
 
-
 def all_posts(request, page):
     """ get all posts of particular page """
 
     if not str(page):
         return JsonResponse({"error": "Choose All Post/Following's post"}, status=400)
 
-    if str(page) == "allpost":
+    if str(page) == "allposts":
+
+        # get all posts
         posts = Post.objects.all().order_by("created")
         return  JsonResponse([post.serialize() for post in posts], safe=False)
     
     if request.user.is_authenticated and str(page) == "following":
+        
+        if not User.objects.filter(following=request.user).exists():
+             return  JsonResponse({"error": "Not following anyone"}, status=400)
+
+        # get posts of followed users
         following = User.objects.filter(following=request.user)
-        posts = Post.objects.filter(author=following)
+        posts = Post.objects.filter(author=following[0])
+        for user in following[1:]:
+            posts |= Post.objects.filter(author=user)
+        return  JsonResponse([post.serialize() for post in posts], safe=False)
     
-    return  JsonResponse({"error": "Login Required"}, status=401)
+    return  JsonResponse({"error": "Login Required/ following"}, status=401)
 
 
 
-@csrf_exempt
 @login_required
 def create_post(request):
     """ create new post """
@@ -107,7 +115,6 @@ def create_post(request):
         return JsonResponse({"error": "only POST method"}, status=405)
 
 
-@csrf_exempt
 @login_required
 def post(request, post_id):
     """ get particular post or edit post """
@@ -142,7 +149,7 @@ def post(request, post_id):
     return JsonResponse({"error": "only GET & PUT request accepted"}, status=405)
 
 
-@csrf_exempt
+
 @login_required
 def comment(request, post_id):
     """ get all comments or create a new comment """
@@ -172,7 +179,7 @@ def comment(request, post_id):
     return JsonResponse({"error": "POST & GET only"}, status=405)
 
 
-@csrf_exempt
+
 @login_required
 def edit_comment(request, comment_id):
     """ Edit the exsiting comment """
@@ -213,6 +220,7 @@ def profile(request, user_id):
     return JsonResponse(user.serialize())
   
 
+
 @login_required
 def following(request, user_id):
     """ follow and unfollow user """
@@ -221,7 +229,7 @@ def following(request, user_id):
     except User.DoesNotExist:
         return JsonResponse({"error": "User Doesn't Exists"}, status=400)
 
-    current_user = User.objects.get(id=request.user)
+    current_user = request.user
 
     if request.method == "POST":
 
