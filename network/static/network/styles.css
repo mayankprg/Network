@@ -1,0 +1,20 @@
+*, *:before, *:after {
+    box-sizing: border-box;
+  }
+
+
+.flex {
+  display: flex;
+}
+
+
+
+
+
+.post {
+  flex-direction: column;
+  justify-content: center;
+  border: 1px solid green;
+  margin: 10px auto;
+  padding: 5px;
+}

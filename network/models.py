@@ -5,7 +5,7 @@ from django.db import models
 
 class User(AbstractUser):
 
-    following = models.ManyToManyField("self", blank=True, null=True)
+    following = models.ManyToManyField("self", blank=True)
 
     def serialize(self):
         return {

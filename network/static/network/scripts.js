@@ -63,6 +63,7 @@ async function edit_post(post_id){
 
     return await fetch(`/post/${post_id}`, { 
         method: "PUT",
+        headers: {'X-CSRFToken': csrftoken},
         body: JSON.stringify({
             post: data
         })
@@ -82,7 +83,8 @@ async function all_posts(page){
 
 async function get_post(post_id){
     let response = await fetch(`/post/${post_id}`, {
-        method: "GET"
+        method: "GET",
+        headers: {'X-CSRFToken': csrftoken},
     })
     let data = response.json();
     console.log(data);
@@ -129,7 +131,10 @@ async function editcomment(comment_id){
 
 async function profile(user_id){
     
-    let res = await fetch(`/profile/${user_id}`)   
+    let res = await fetch(`/profile/${user_id}`,{
+        headers: {'X-CSRFToken': csrftoken},
+    } 
+    )   
     let data = await res.json()
 
     console.log(data)
