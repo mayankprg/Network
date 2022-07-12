@@ -9,15 +9,51 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.core.paginator import Paginator
 from django.views.generic import ListView
+from rest_framework import status
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework import permissions
+
+from network.serializers import PostSerializer
+
 
 from .models import User, Post, Comment
 
 
-def index(request):
-    if request.method == "GET":
-        allPosts = Post.objects.all().order_by("created")
-        page_obj = Paginator(allPosts, per_page=10)
-        return render(request, "network/index.html", {"page_obj": page_obj})
+
+
+ 
+@api_view(['GET', 'POST'])
+@permission_classes((permissions.AllowAny,))
+def postPage(request, user_id, page_num):
+    try:
+        user = User.objects.get(pk=user_id)
+    except User.DoesNotExist:
+        
+        return HttpResponse(status=404)
+    # user has no posts
+    if not Post.objects.filter(author=user).exists():
+        return JsonResponse({"error": "does not exists"}, status=404)
+    posts = Post.objects.filter(author=user).all().order_by("created")
+    posts_obj = Paginator(posts, 10)
+    page = posts_obj.page(page_num)
+    pages = page.object_list
+    context = {
+        "page_count": posts_obj.num_pages,
+        "results": [PostSerializer(page).data for page in pages]
+    }
+    
+    return Response(context)
+
+
+
+
+# def index(request):
+#     if request.method == "GET":
+#         allPosts = Post.objects.all().order_by("created")
+#         page_obj = Paginator(allPosts, per_page=10)
+#         return render(request, "network/index.html", {"page_obj": page_obj})
 
 
 class IndexView(ListView):
@@ -25,6 +61,15 @@ class IndexView(ListView):
     template_name = 'network/index.html'
     ordering = ['-created']
     paginate_by = 10
+
+
+
+
+
+def status(request):
+    if request.user.is_authenticated:
+        return JsonResponse({"status": "true"}, safe=False)
+    return JsonResponse({"status": "false"}, safe=False)
 
 
 def login_view(request):
@@ -238,3 +283,4 @@ def like(request, post_id):
         post.save()
         return HttpResponse(status=201)
     return JsonResponse({"error": "PUT & POST only"}, status=405)
+

@@ -1,20 +1,89 @@
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
 
-    document.querySelector('#sb-post').disabled = true; 
-    document.querySelector('#ta-post').onkeyup = () => {
-        if (document.querySelector('#ta-post').value.length > 0){
-            document.querySelector('#sb-post').disabled = false;
-        } else {
-            document.querySelector('#sb-post').disabled = true;
-        }
-    }
+  
+    let response = await fetch("status");
+    let data = await response.json();
+    if (data.status === "true"){
+        submitPost();
+        viewProfile();
+    } 
 
-    document.querySelector('#sb-post').onclick = new_post;
-
-   
 
 
 })
+
+
+function viewProfile(){
+
+    document.addEventListener('click', async event => {
+        element = event.target;
+        if (element.id === "profile") {
+            user_id = element.dataset.id;
+            let data = await profile(user_id);
+            ChangeView("profile-view");
+            console.log(data)
+
+            const profileView = document.querySelector('#profile-view');
+
+            let author = document.createElement('p');
+            let following = document.createElement('p');
+            let followers = document.createElement('p');
+            let follow = document.createElement('button');
+
+            let page = await getPage(user_id, 1);
+            let div = document.createElement('div')
+            div.innerHTML = page;
+            profileView.append(div)
+            
+
+            
+
+            
+            profileView.append(author)
+        }
+    })
+}
+
+
+async function profile(user_id){
+    
+    let res = await fetch(`/profile/${user_id}`,{
+        headers: {'X-CSRFToken': csrftoken},
+    })   
+    return await res.json();
+    
+    
+}
+
+
+
+
+function ChangeView(view){
+
+    if (view === "profile-view"){
+        document.querySelector('#profile-view').style.display = 'block';
+        document.querySelector('#post').style.display = 'none';
+        
+    } else if (view === "posts-view") {
+        document.querySelector('#profile-view').style.display = 'none';
+        document.querySelector('#post').style.display = 'block';
+    }
+
+        
+
+}
+
+function submitPost() {
+    document.querySelector('#sb-post').disabled = true; 
+        document.querySelector('#ta-post').onkeyup = () => {
+            if (document.querySelector('#ta-post').value.length > 0){
+                document.querySelector('#sb-post').disabled = false;
+            } else {
+                document.querySelector('#sb-post').disabled = true;
+            }
+        }
+        document.querySelector('#sb-post').onclick = new_post;
+}
 
 
 function getCookie(name) {
@@ -40,6 +109,7 @@ async function new_post(event){
     let post_data = document.querySelector('#ta-post').value;
     await create_post(post_data);
     document.querySelector('#ta-post').value = "";
+    document.querySelector('#sb-post').disabled = true;
     
 }
 
@@ -52,6 +122,7 @@ async function create_post(post_data){
             post: post_data
         })
     })
+    
     
 }
 
@@ -129,18 +200,6 @@ async function editcomment(comment_id){
 }
 
 
-async function profile(user_id){
-    
-    let res = await fetch(`/profile/${user_id}`,{
-        headers: {'X-CSRFToken': csrftoken},
-    } 
-    )   
-    let data = await res.json()
-
-    console.log(data)
-}
-
-
 
 async function follow(user_id){
     
@@ -150,4 +209,11 @@ async function follow(user_id){
     let data = await res.json()
 
     console.log(data)
+}
+
+
+async function getPage(user_id, pagnum){
+    let response = await fetch(`api/${user_id}/${pagnum}`)
+    return await response.json()
+    
 }

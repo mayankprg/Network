@@ -9,12 +9,50 @@
 
 
 
-
+#post{
+  margin-left: 50px;
+  margin-right: 50px;
+}
 
 .post {
   flex-direction: column;
   justify-content: center;
-  border: 1px solid green;
-  margin: 10px auto;
-  padding: 5px;
+  border: 1px;
+  border-style: hidden solid;
+ 
+  
+  padding: 10px;
+  width: min(500px, 80vw);
+}
+
+.divider {
+  border-bottom: 1px solid grey;
+  width: 100%;
+}
+
+
+.index-view {
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+
+#post>form>input {
+  margin-top: 10px;
+}
+
+.body {
+  margin-top: 20px;
+}
+
+
+.links {
+  cursor: pointer;
+  
+}
+
+
+.links:hover {
+  text-decoration: underline;
 }

@@ -10,6 +10,7 @@ class User(AbstractUser):
     def serialize(self):
         return {
             "id": self.id,
+            "user": self.username,
             "following": self.following.count(),
             "followers": User.objects.filter(following=self).all().count(),
             "posts": [post.serialize() for post in self.user_post.all()],
