@@ -15,7 +15,7 @@ from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework import permissions
 
-from network.serializers import PostSerializer
+from network.serializers import PostSerializer, UserSerializer
 
 
 from .models import User, Post, Comment
@@ -229,13 +229,15 @@ def edit_comment(request, comment_id):
     return JsonResponse({"error": "PUT only"}, status=405)
 
 
+@api_view(['GET'])
 @login_required
 def profile(request, user_id):
     try:
         user = User.objects.get(id=user_id)
     except User.DoesNotExist:
         return JsonResponse({"error": "User Doesn't Exists"}, status=400)
-    return JsonResponse(user.serialize())
+    print(User.objects.filter(following=user))
+    return Response(UserSerializer(user).data)
   
 
 @login_required
@@ -245,6 +247,8 @@ def following(request, user_id):
         user = User.objects.get(id=user_id)
     except User.DoesNotExist:
         return JsonResponse({"error": "User Doesn't Exists"}, status=400)
+    if request.user == user:
+        return JsonResponse({"error": "Can't follow/unfollow self"}, status=400)
     current_user = request.user
     if request.method == "POST":
         if user in current_user.following.all():

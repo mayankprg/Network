@@ -5,17 +5,17 @@ from django.db import models
 
 class User(AbstractUser):
 
-    following = models.ManyToManyField("self", blank=True)
+    following = models.ManyToManyField("self", blank=True, symmetrical=False)
 
     def serialize(self):
         return {
             "id": self.id,
             "user": self.username,
             "following": self.following.count(),
-            "followers": User.objects.filter(following=self).all().count(),
-            "posts": [post.serialize() for post in self.user_post.all()],
         }
 
+    def followers_count(self):
+        return  User.objects.filter(following=self).count()
 
 class Post(models.Model):
 

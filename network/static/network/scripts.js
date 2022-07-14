@@ -18,12 +18,16 @@ function viewProfile(){
     document.addEventListener('click', async event => {
         element = event.target;
         if (element.id === "profile") {
+            
             user_id = element.dataset.id;
-            let data = await profile(user_id);
+            let user_profile = await profile(user_id);
+            let posts = await getPage(user_id, 1);
             ChangeView("profile-view");
-            console.log(data)
+            console.log(user_profile)
+            console.log(posts)
 
             const profileView = document.querySelector('#profile-view');
+
 
             let author = document.createElement('p');
             let following = document.createElement('p');
@@ -203,12 +207,11 @@ async function editcomment(comment_id){
 
 async function follow(user_id){
     
-    let res = await fetch(`/following/${user_id}`, {
+    await fetch(`/following/${user_id}`, {
+        headers: {'X-CSRFToken': csrftoken},
         method: "POST"
     })   
-    let data = await res.json()
 
-    console.log(data)
 }
 
 
