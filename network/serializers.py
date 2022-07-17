@@ -4,6 +4,10 @@ from rest_framework import serializers
 from network.models import User, Comment, Post
 
 class PostSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(
+        source='author.username',
+        read_only=True
+    )
     class Meta:
         model = Post
         fields = '__all__'
@@ -19,4 +23,4 @@ class UserSerializer(serializers.ModelSerializer):
         )
     class Meta:
         model = User
-        fields = ['id', 'username', 'following','followers']
+        fields = ['id', 'username', 'following', 'followers']

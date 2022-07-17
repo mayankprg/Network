@@ -38,10 +38,13 @@ def postPage(request, user_id, page_num):
     posts = Post.objects.filter(author=user).all().order_by("created")
     posts_obj = Paginator(posts, 10)
     page = posts_obj.page(page_num)
-    pages = page.object_list
+    page_obj = page.object_list
     context = {
+        "has_next": page.has_next(),
+        "has_previous": page.has_previous(),
         "page_count": posts_obj.num_pages,
-        "results": [PostSerializer(page).data for page in pages]
+        "current_page": page.number,
+        "results": [PostSerializer(page).data for page in page_obj]
     }
     
     return Response(context)
@@ -236,7 +239,6 @@ def profile(request, user_id):
         user = User.objects.get(id=user_id)
     except User.DoesNotExist:
         return JsonResponse({"error": "User Doesn't Exists"}, status=400)
-    print(User.objects.filter(following=user))
     return Response(UserSerializer(user).data)
   
 
