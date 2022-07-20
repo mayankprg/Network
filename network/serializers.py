@@ -8,6 +8,10 @@ class PostSerializer(serializers.ModelSerializer):
         source='author.username',
         read_only=True
     )
+    likes = serializers.CharField(
+        source='likes.count',
+        read_only=True
+    )
     class Meta:
         model = Post
         fields = '__all__'

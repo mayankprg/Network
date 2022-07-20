@@ -15,7 +15,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 
 window.onpopstate = function (event) {
-    console.log(event.state.user_id);
+   
 
 }
 
@@ -32,18 +32,14 @@ function viewProfile(){
             
             let user_posts = await get_user_posts(user_id, 1);
 
-            history.pushState({user_id: user_id}, "", `/?user=${user_id}`);
+            history.pushState({user_id: user_id, page_num:1}, "", `/?user=${user_id}&page=1`);
             
             ChangeView("profile-view");
 
             load_profile(user_profile, user_posts);
-            
-            
-            
-
             // console.log(user_profile)
             // console.log(user_posts)
-
+    
 
         }
     })
@@ -66,6 +62,7 @@ function load_profile(user_profile, user_posts) {
     following = user_profile.following;
 
     let profile_div = document.createElement('div');
+    profile_div.dataset.id = user_profile.id;
     profile_div.append(name, followers, following)
 
     profile_view.append(profile_div)
@@ -77,6 +74,7 @@ function load_profile(user_profile, user_posts) {
         let created = document.createElement('p');
         let likes = document.createElement('p');
 
+        body.dataset.id = data.id;
         profile_name.innerHTML = data.username
         body.innerHTML = data.body
         created.innerHTML = data.created
@@ -85,16 +83,23 @@ function load_profile(user_profile, user_posts) {
         let div =  document.createElement('div');
 
         div.className = "flex post";
-        div.append(profile_name, body, created, likes)
+
+        let edit_btn = document.createElement("a");
+
+        edit_btn.className = "edit-link";
+        edit_btn.href = "#";
+        edit_btn.innerHTML = "Edit";
+        edit_btn.onclick = edit_post;
+        div.append(profile_name, body, created, likes, edit_btn);
 
         profile_view.append(div) 
     });
 
 
     const nav_list = document.createElement('ul');
+    // do something with this nav
     const nav = document.createElement('nav');
     nav_list.className = "pagination";
-
 
     profile_view.append(nav_list);
 
@@ -111,7 +116,7 @@ function load_profile(user_profile, user_posts) {
             let user_id = previous_btn.dataset.user_id;
             let user_profile = await profile(user_id);
             let user_posts = await get_user_posts(user_id, page_num);
-            history.pushState({user_id: user_id}, "", `/?user=${user_id}`);
+            history.pushState({user_id: user_id, page_num:page_num}, "", `/?user=${user_id}&page=${page_num}`);
             load_profile(user_profile, user_posts);
 
             
@@ -134,17 +139,46 @@ function load_profile(user_profile, user_posts) {
             let user_profile = await profile(user_id);
             
             let user_posts = await get_user_posts(user_id, page_num);
-            history.pushState({user_id: user_id}, "", `/?user=${user_id}`);
+            history.pushState({user_id: user_id, page_num:page_num}, "", `/?user=${user_id}&page=${page_num}`);
             load_profile(user_profile, user_posts);
 
-            
         }
-
     } 
+}
 
-   
 
 
+async function edit_post(event){
+
+    // console.log(user_id)
+
+    let post_element = event.target.parentElement;
+
+    let user_id = post_element.parentElement.firstChild.dataset.id;
+
+    let post_body = post_element.children.item(1).innerHTML;
+    let post_id = post_element.children.item(1).dataset.id
+    const element = document.querySelector('#post');
+    let text_area = element.children.item(0).children.item(0);
+    let post_btn = element.children.item(0).children.item(1);
+
+    post_btn.onclick = 
+
+    
+    text_area.value = post_body;
+
+    post_element.parentNode.replaceChild(element, post_element);
+
+
+
+
+    // return await fetch(`/post/${post_id}`, { 
+    //     method: "PUT",
+    //     headers: {'X-CSRFToken': csrftoken},
+    //     body: JSON.stringify({
+    //         post: data
+    //     })
+    // })
     
 }
 
@@ -235,20 +269,6 @@ async function create_post(post_data){
 }
 
 
-
-async function edit_post(post_id){
-
-    let data = document.querySelector('#ta-post').value;
-
-    return await fetch(`/post/${post_id}`, { 
-        method: "PUT",
-        headers: {'X-CSRFToken': csrftoken},
-        body: JSON.stringify({
-            post: data
-        })
-    })
-    
-}
 
 
 async function all_posts(page){
