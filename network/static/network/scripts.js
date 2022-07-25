@@ -7,7 +7,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (data.status === "true"){
         submitPost();
         viewProfile();
-    } 
+        
+    } else {
+        document.addEventListener('click', event => {
+            element = event.target;
+            if (element.id === "profile") {
+                document.querySelector('#login').click();
+            }
+        })
+    }
 
 
 
@@ -15,10 +23,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 
 window.onpopstate = function (event) {
-   
-
+   //doo
+   let id = event.state.user_id;
+   let page = event.state.page_num 
+   load_profile_page(id, page);
 }
-
 
 function viewProfile(){
 
@@ -26,23 +35,26 @@ function viewProfile(){
         element = event.target;
         if (element.id === "profile") {
 
-            const user_id = element.dataset.id;
-            
-            let user_profile = await profile(user_id);
-            
-            let user_posts = await get_user_posts(user_id, 1);
-
-            history.pushState({user_id: user_id, page_num:1}, "", `/?user=${user_id}&page=1`);
-            
-            ChangeView("profile-view");
-
-            load_profile(user_profile, user_posts);
+            let user_id = element.dataset.id;
+            history.pushState({user_id: user_id, page_num: 1}, "", `/?user=${user_id}&page=1`);
+            console.log(history.state)
+            load_profile_page(user_id, 1)
             // console.log(user_profile)
             // console.log(user_posts)
     
-
         }
     })
+}
+
+async function  load_profile_page(user_id, page_num) {
+      
+    let user_profile = await profile(user_id);
+            
+    let user_posts = await get_user_posts(user_id, 1);
+
+    ChangeView("profile-view");
+
+    load_profile(user_profile, user_posts);
 }
 
 
@@ -94,15 +106,11 @@ function load_profile(user_profile, user_posts) {
 
         profile_view.append(div) 
     });
-
-
     const nav_list = document.createElement('ul');
     // do something with this nav
     const nav = document.createElement('nav');
     nav_list.className = "pagination";
-
     profile_view.append(nav_list);
-
     if (user_posts.has_previous) {
         let = previous_btn = document.createElement('li');
         previous_btn.innerHTML = "Previous";
@@ -118,12 +126,8 @@ function load_profile(user_profile, user_posts) {
             let user_posts = await get_user_posts(user_id, page_num);
             history.pushState({user_id: user_id, page_num:page_num}, "", `/?user=${user_id}&page=${page_num}`);
             load_profile(user_profile, user_posts);
-
-            
         }
-
     } 
-
     if (user_posts.has_next) {
         let = next_btn = document.createElement('li');
         next_btn.innerHTML = "Next";
@@ -131,13 +135,10 @@ function load_profile(user_profile, user_posts) {
         next_btn.dataset.page_num = parseInt(user_posts.current_page) + 1;
         next_btn.dataset.user_id = user_profile.id;
         nav_list.append(next_btn);
-
         next_btn.onclick = async () => {
             let page_num = next_btn.dataset.page_num;
             let user_id = next_btn.dataset.user_id;
-
             let user_profile = await profile(user_id);
-            
             let user_posts = await get_user_posts(user_id, page_num);
             history.pushState({user_id: user_id, page_num:page_num}, "", `/?user=${user_id}&page=${page_num}`);
             load_profile(user_profile, user_posts);
@@ -149,42 +150,62 @@ function load_profile(user_profile, user_posts) {
 
 
 async function edit_post(event){
-
-    // console.log(user_id)
-
+   
     let post_element = event.target.parentElement;
-
-    let user_id = post_element.parentElement.firstChild.dataset.id;
+    
+    let user_id = post_element.parentElement.firstElementChild.dataset.id;
+    let parent = post_element.parentElement;
+    
+    let cancel_btn = document.createElement('a');
+    cancel_btn.href = "#";
+    cancel_btn.innerHTML = "Cancel";
 
     let post_body = post_element.children.item(1).innerHTML;
     let post_id = post_element.children.item(1).dataset.id
-    const element = document.querySelector('#post');
-    let text_area = element.children.item(0).children.item(0);
-    let post_btn = element.children.item(0).children.item(1);
 
-    post_btn.onclick = 
+    // const post_div = document.querySelector('#post');
+    // let text_area = post_div.children.item(0).children.item(0);
+    // let post_btn = post_div.children.item(0).children.item(1);
 
+
+    let text_area = document.createElement("textarea");
+    text_area.className = "form-control";
+
+    let post_div = document.createElement('div');
+    post_div.className = "form-floating";
     
+    let form = document.createElement('form');
+
+    let post_btn = document.createElement('input');
+    post_btn.type = "submit";
+    post_btn.className = "btn btn-primary mb-3";
+
+    form.append(text_area, post_btn, cancel_btn);
+    post_div.append(form);
+
+    post_btn.onclick = async (event) => {
+        event.preventDefault();
+        if (text_area.value == post_body) {
+            parent.replaceChild(post_element, post_div);
+        } else {
+            let body = text_area.value;
+            let response = await fetch(`/post/${post_id}`, { 
+                method: "PUT",
+                headers: {'X-CSRFToken': csrftoken},
+                body: JSON.stringify({
+                    post: body
+                })
+            })
+            let data = await response.json();
+            // console.log(data);
+            // send fetch call =- get current edited post 
+        }
+    }
+
     text_area.value = post_body;
+    parent.replaceChild(post_div, post_element);
 
-    post_element.parentNode.replaceChild(element, post_element);
-
-
-
-
-    // return await fetch(`/post/${post_id}`, { 
-    //     method: "PUT",
-    //     headers: {'X-CSRFToken': csrftoken},
-    //     body: JSON.stringify({
-    //         post: data
-    //     })
-    // })
-    
 }
-
-
-
-
 
 
 async function profile(user_id){
@@ -340,7 +361,7 @@ async function follow(user_id){
 
 
 async function get_user_posts(user_id, pagnum){
-    let response = await fetch(`api/${user_id}/${pagnum}`)
+    let response = await fetch(`userpost/${user_id}/${pagnum}`)
     return await response.json()
     
 }

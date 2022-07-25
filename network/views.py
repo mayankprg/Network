@@ -1,3 +1,4 @@
+from turtle import pos
 from django.contrib.auth import authenticate, login, logout
 import json
 from django.db import IntegrityError
@@ -161,6 +162,7 @@ def create_post(request):
 
 
 @login_required
+@api_view(['PUT'])
 def post(request, post_id):
     """ get particular post or edit post """
     try:
@@ -168,22 +170,21 @@ def post(request, post_id):
     except Post.DoesNotExist:
         # no post found
         return JsonResponse({"error": "No Post Found"}, status=400)
-    if request.method == "GET":
-        # get particular post
-        return JsonResponse(post.serialize())
+   
     if request.method == "PUT":
         # ceck is user is post's author 
         if request.user != post.author:
             return JsonResponse({"error": "Not Authorised"}, status=403)
         data = json.loads(request.body)
         if len(data.get("post")) < 1 or len(data.get("post")) > 280:
-            return JsonResponse({"error": "post"}, status=400)
+            return JsonResponse({"error": "post not valid"}, status=400)
         # save edited post 
         post.body = data.get("post")
         post.edited = True
         post.save()
-        return HttpResponse(status=201)
-    return JsonResponse({"error": "only GET & PUT request accepted"}, status=405)
+        data = PostSerializer(post).data
+        return Response({"post": data}, status=201)
+    return JsonResponse({"error": "only PUT request accepted"}, status=405)
 
 
 

@@ -20,7 +20,6 @@
   border: 1px;
   border-style: hidden solid;
  
-  
   padding: 10px;
   width: min(500px, 80vw);
 }
@@ -62,4 +61,18 @@
 
 }
 
-.
+nav > a {
+  margin-left: 15px;
+}
+
+
+@media (max-width: 992px){
+ li[class=nav-item]{
+  margin-right: 15px;
+ }
+}
+
+.disabled {
+  pointer-events: none;
+  cursor: default;
+}
