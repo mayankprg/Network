@@ -17,7 +17,7 @@ class PostSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class UserSerializer(serializers.ModelSerializer):
-    following = serializers.IntegerField(
+    following_count = serializers.IntegerField(
             source='following.count', 
             read_only=True
         )
@@ -27,4 +27,4 @@ class UserSerializer(serializers.ModelSerializer):
         )
     class Meta:
         model = User
-        fields = ['id', 'username', 'following', 'followers']
+        fields = ['id', 'username', 'following', 'followers', 'following_count']

@@ -21,17 +21,18 @@
 
     {% for post in page_obj %}
         <div class="flex post">
-            <p data-id={{post.author.id}} id="profile" class="fs-4 fw-semibold links">{{post.author|lower|capfirst}}</p>
             <div class="divider"></div>
+            <p data-id={{post.author.id}} id="profile" class="fs-4 fw-semibold links">{{post.author|lower|capfirst}}</p>
             <p>{{post.body}}</p>
-            {% if post.edited %}
-            <p class="text-muted fs-6">{{post.modified}}</p>
-            {%else%}
-            <p class="text-muted fs-6">{{post.created}}</p>
-            {%endif%}
-           
-            <p>{{post.likes.count}}</p>
-            
+            <div class="post-footer">
+                <p>{{post.likes.count}} <span class="like-btn">❤️</span></p>
+
+                {% if post.edited %}
+                <p class="text-muted fs-6">{{post.modified}}</p>
+                {%else%}
+                <p class="text-muted fs-6">{{post.created}}</p>
+                {%endif%}
+            </div>
         </div>
     {% endfor %}         
 

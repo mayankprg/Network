@@ -7,13 +7,6 @@ class User(AbstractUser):
 
     following = models.ManyToManyField("self", blank=True, symmetrical=False)
 
-    def serialize(self):
-        return {
-            "id": self.id,
-            "user": self.username,
-            "following": self.following.count(),
-        }
-
     def followers_count(self):
         return  User.objects.filter(following=self).count()
 

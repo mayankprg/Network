@@ -1,116 +1,164 @@
-document.addEventListener('DOMContentLoaded', async () => {
+document.addEventListener('DOMContentLoaded', () => {
 
-    
-
-    let response = await fetch("status");
-    let data = await response.json();
+    is_logged_in()
+    .then(data => {
     if (data.status === "true"){
         submitPost();
-        viewProfile();
-        
-    } else {
         document.addEventListener('click', event => {
             element = event.target;
             if (element.id === "profile") {
-                document.querySelector('#login').click();
+                let user_id = element.dataset.id;
+                history.pushState({user_id: user_id, page_num: 1}, "", `/?user=${user_id}&page=1`);
+                load_profile_page(user_id, 1)
+                // console.log(user_profile)
+                // console.log(user_posts)
             }
         })
-    }
-
-
-
+    } else {
+            document.addEventListener('click', event => {
+                element = event.target;
+                if (element.id === "profile") {
+                    document.querySelector('#login').click();
+                }
+            })
+        }
+    })
 })
 
 
 window.onpopstate = function (event) {
    //doo
-   let id = event.state.user_id;
-   let page = event.state.page_num 
-   load_profile_page(id, page);
+   if (event.state.user_id){
+    let id = event.state.user_id;
+    let page = event.state.page_num 
+    load_profile_page(id, page);
+   }
 }
 
-function viewProfile(){
 
-    document.addEventListener('click', async event => {
+async function is_logged_in(){
+    let response = await fetch("status");
+    return await response.json();
+}
+
+
+function like(){
+    document.addEventListener('click', event => {
         element = event.target;
-        if (element.id === "profile") {
+        if (element.className === "like-btn"){
 
-            let user_id = element.dataset.id;
-            history.pushState({user_id: user_id, page_num: 1}, "", `/?user=${user_id}&page=1`);
-            console.log(history.state)
-            load_profile_page(user_id, 1)
-            // console.log(user_profile)
-            // console.log(user_posts)
-    
         }
     })
 }
 
+
+
+
 async function  load_profile_page(user_id, page_num) {
-      
     let user_profile = await profile(user_id);
-            
+    // TODO repair load profile page in windowOnPopState
     let user_posts = await get_user_posts(user_id, 1);
-
     ChangeView("profile-view");
-
     load_profile(user_profile, user_posts);
 }
 
 
 function load_profile(user_profile, user_posts) {
-
     const profile_view = document.querySelector('#profile-view');
     profile_view.innerHTML = "";
 
     let posts = user_posts.results;
-
+    let div = document.createElement('div');
+    div.className = "follow-data";
+    
     let name = document.createElement('p');
     let followers = document.createElement('p');
     let following = document.createElement('p');
+    let followers_num = document.createElement('span');
+    let following_num = document.createElement('span');
 
-    name.innerHTML = user_profile.username;
-    followers.innerHTML = user_profile.followers;
-    following = user_profile.following;
-
+    name.innerHTML = user_profile.username.toLowerCase().charAt(0).toUpperCase() + user_profile.username.slice(1,);
+    followers_num.innerHTML = user_profile.followers;
+    following_num.innerHTML = user_profile.following;
+    followers.append("Followers", followers_num);
+    following.append("Following", following_num);
+    div.append(followers, following);
+    
     let profile_div = document.createElement('div');
+    profile_div.className = "flex usr-div";
     profile_div.dataset.id = user_profile.id;
-    profile_div.append(name, followers, following)
-
-    profile_view.append(profile_div)
-
-    posts.forEach(data => {
-        
+    is_logged_in()
+    .then(data => { 
+        if (data.user !== user_profile.id){
+            let btn = document.createElement('button');
+            if (data.user in user_profile.following) {
+                btn.className = "btn btn-secondary";
+                btn.innerHTML = "Unfollow";
+                btn.onclick = () => {follow(user_profile.id)};
+            } else {
+                btn.className = "btn btn-success";
+                btn.innerHTML = "Follow";
+                btn.onclick = () => {follow(user_profile.id)};
+            }
+           
+            profile_div.append(name, div, btn);
+        } else {
+            profile_div.append(name, div);
+            
+        }
+     })
+     profile_view.append(profile_div);
+    
+  
+    posts.forEach( data => {
         let profile_name = document.createElement('p');
         let body = document.createElement('p');
-        let created = document.createElement('p');
+        let date = document.createElement('p');
         let likes = document.createElement('p');
 
+        let post_footer = document.createElement('div');
+        post_footer.className = "post-footer";
+        let span = document.createElement('span');
+        span.innerHTML = "❤️";
+        span.className = "like-btn links";
+        
+        profile_name.className = "fs-4 fw-semibold links";
         body.dataset.id = data.id;
-        profile_name.innerHTML = data.username
-        body.innerHTML = data.body
-        created.innerHTML = data.created
-        likes.innerHTML = data.likes
-
+        profile_name.innerHTML = data.username.toLowerCase().charAt(0).toUpperCase() + data.username.slice(1,);
+        body.innerHTML = data.body;
+        date.innerHTML = data.created;
+        likes.innerHTML = data.likes;
+        likes.append(span);
+        post_footer.append(likes, date);
+        let divider = document.createElement('div');
+        divider.className = "divider";
         let div =  document.createElement('div');
-
         div.className = "flex post";
 
-        let edit_btn = document.createElement("a");
-
-        edit_btn.className = "edit-link";
-        edit_btn.href = "#";
-        edit_btn.innerHTML = "Edit";
-        edit_btn.onclick = edit_post;
-        div.append(profile_name, body, created, likes, edit_btn);
-
+        is_logged_in()
+        .then(json_data => {
+            let user_id = json_data.user;
+            if (user_id === data.author){
+                let edit_btn = document.createElement("a");
+                edit_btn.className = "edit-link";
+                edit_btn.href = "#";
+                edit_btn.innerHTML = "Edit";
+                edit_btn.onclick = edit_post;
+                div.append(divider, profile_name, body, post_footer, edit_btn);
+            } else {
+                div.append(divider, profile_name, body, post_footer);
+            }
+        })
         profile_view.append(div) 
     });
-    const nav_list = document.createElement('ul');
-    // do something with this nav
-    const nav = document.createElement('nav');
+
+
+    let nav_list = document.createElement('ul');
     nav_list.className = "pagination";
-    profile_view.append(nav_list);
+    // do something with this nav
+    // let nav = document.createElement('nav');
+    
+    profile_view.appendChild(nav_list);
     if (user_posts.has_previous) {
         let = previous_btn = document.createElement('li');
         previous_btn.innerHTML = "Previous";
@@ -142,10 +190,11 @@ function load_profile(user_profile, user_posts) {
             let user_posts = await get_user_posts(user_id, page_num);
             history.pushState({user_id: user_id, page_num:page_num}, "", `/?user=${user_id}&page=${page_num}`);
             load_profile(user_profile, user_posts);
-
         }
     } 
 }
+
+
 
 
 
@@ -311,50 +360,19 @@ async function get_post(post_id){
 }
 
 
-async function comment(post_id){
-   
-    let response = await fetch(`/comment/${post_id}`, {
-        method: "GET"   
-    })
-    let data = await response.json();
-    console.log(data);
+
+
+
+function follow(user_id){
     
-}
-
-
-async function comments(post_id){
-    
-    await fetch(`/comment/${post_id}`, {
-        method: "POST",
-        body: JSON.stringify({
-            comment: "erojthk"
-        })   
-    })
-  
-    
-}
-
-
-
-async function editcomment(comment_id){
-    
-    await fetch(`/editcomment/${comment_id}`, {
-        method: "PUT",
-        body: JSON.stringify({
-            comment: "commment edited"
-        })   
-    })
-  
-    
-}
-
-
-
-async function follow(user_id){
-    
-    await fetch(`/following/${user_id}`, {
+    fetch(`/following/${user_id}`, {
         headers: {'X-CSRFToken': csrftoken},
         method: "POST"
+    })
+    .then(response => {
+        if (response.status == 201){
+            
+        }
     })   
 
 }
@@ -365,3 +383,8 @@ async function get_user_posts(user_id, pagnum){
     return await response.json()
     
 }
+
+
+
+// first work on design and add 
+// lots of lorem ispsum posts 

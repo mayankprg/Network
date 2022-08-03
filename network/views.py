@@ -1,4 +1,3 @@
-from turtle import pos
 from django.contrib.auth import authenticate, login, logout
 import json
 from django.db import IntegrityError
@@ -70,11 +69,6 @@ class IndexView(ListView):
 
 
 
-def status(request):
-    if request.user.is_authenticated:
-        return JsonResponse({"status": "true"}, safe=False)
-    return JsonResponse({"status": "false"}, safe=False)
-
 
 def login_view(request):
     if request.method == "POST":
@@ -97,6 +91,13 @@ def login_view(request):
 def logout_view(request):
     logout(request)
     return HttpResponseRedirect(reverse("index"))
+
+
+
+def status(request):
+    if request.user.is_authenticated:
+        return JsonResponse({"status": "true", "user": request.user.id}, safe=False)
+    return JsonResponse({"status": "false"}, safe=False)
 
 
 def register(request):
@@ -244,30 +245,31 @@ def profile(request, user_id):
   
 
 @login_required
+@api_view(['POST', 'PUT'])
 def following(request, user_id):
     """ follow and unfollow user """
     try: 
         user = User.objects.get(id=user_id)
     except User.DoesNotExist:
-        return JsonResponse({"error": "User Doesn't Exists"}, status=400)
+        return Response({"error": "User Doesn't Exists"}, status=400)
     if request.user == user:
-        return JsonResponse({"error": "Can't follow/unfollow self"}, status=400)
+        return Response({"error": "Can't follow/unfollow self"}, status=400)
     current_user = request.user
     if request.method == "POST":
         if user in current_user.following.all():
-            return JsonResponse({"error": "Already Following"}, status=400)
+            return Response({"error": "Already Following"}, status=400)
         # follow user
         current_user.following.add(user)
         current_user.save()
         return HttpResponse(status=201)
     if request.method == "PUT":
         if user not in current_user.following.all():
-            return JsonResponse({"error": "Not Following"}, status=400)
+            return Response({"error": "Not Following"}, status=400)
         # unfollow user
         current_user.following.remove(user)
         current_user.save()
         return HttpResponse(status=201)
-    return JsonResponse({"error": "PUT & POST only"}, status=405)
+    return Response({"error": "PUT & POST only"}, status=405)
 
 
 @login_required
