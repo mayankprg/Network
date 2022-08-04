@@ -62,14 +62,12 @@ async function  load_profile_page(user_id, page_num) {
     load_profile(user_profile, user_posts);
 }
 
+function create_profile_div(user_profile){
+    let profile_div = document.querySelector('.usr-div');
+    profile_div.innerHTML = "";
 
-function load_profile(user_profile, user_posts) {
-    const profile_view = document.querySelector('#profile-view');
-    profile_view.innerHTML = "";
-
-    let posts = user_posts.results;
-    let div = document.createElement('div');
-    div.className = "follow-data";
+    let follow_data_div = document.createElement('div');
+    follow_data_div.className = "follow-data";
     
     let name = document.createElement('p');
     let followers = document.createElement('p');
@@ -78,39 +76,49 @@ function load_profile(user_profile, user_posts) {
     let following_num = document.createElement('span');
 
     name.innerHTML = user_profile.username.toLowerCase().charAt(0).toUpperCase() + user_profile.username.slice(1,);
-    followers_num.innerHTML = user_profile.followers;
-    following_num.innerHTML = user_profile.following;
+    followers_num.innerHTML = user_profile.followers_count;
+    following_num.innerHTML = user_profile.following_count;
     followers.append("Followers", followers_num);
     following.append("Following", following_num);
-    div.append(followers, following);
+    follow_data_div.append(followers, following);
     
-    let profile_div = document.createElement('div');
-    profile_div.className = "flex usr-div";
-    profile_div.dataset.id = user_profile.id;
     is_logged_in()
     .then(data => { 
         if (data.user !== user_profile.id){
             let btn = document.createElement('button');
-            if (data.user in user_profile.following) {
+            if (user_profile.following.includes(data.user)) {
                 btn.className = "btn btn-secondary";
                 btn.innerHTML = "Unfollow";
-                btn.onclick = () => {follow(user_profile.id)};
+                console.log("here")
+                btn.onclick = () => {unfollow(user_profile.id)};
             } else {
                 btn.className = "btn btn-success";
                 btn.innerHTML = "Follow";
-                btn.onclick = () => {follow(user_profile.id)};
+                btn.onclick = () => { console.log(user_profile.id); follow(user_profile.id)};
             }
-           
-            profile_div.append(name, div, btn);
+            profile_div.append(name, follow_data_div, btn);
         } else {
-            profile_div.append(name, div);
-            
+            profile_div.append(name, follow_data_div);
         }
-     })
-     profile_view.append(profile_div);
-    
-  
-    posts.forEach( data => {
+    })
+}
+
+
+
+async function load_profile(user_profile, user_posts) {
+    const profile_view = document.querySelector('#profile-view');
+    profile_view.innerHTML = "";
+
+    let posts = user_posts.results;
+
+    let profile_div = document.createElement('div');
+    profile_div.className = "flex usr-div";
+    profile_div.dataset.id = user_profile.id;
+
+    profile_view.append(profile_div);
+
+    create_profile_div(user_profile);
+    posts.forEach(data => {
         let profile_name = document.createElement('p');
         let body = document.createElement('p');
         let date = document.createElement('p');
@@ -195,6 +203,25 @@ function load_profile(user_profile, user_posts) {
 }
 
 
+
+
+function follow(user_id){
+    
+    fetch(`/following/${user_id}`, {
+        headers: {'X-CSRFToken': csrftoken},
+        method: "POST"
+    })
+    .then(response => {
+        if (response.status == 201){
+            profile(user_id)
+            .then( data => {
+                let profile_div = document.querySelector('.usr-div');
+                create_profile_div(data);
+            })
+        }
+    })   
+
+}
 
 
 
@@ -362,20 +389,6 @@ async function get_post(post_id){
 
 
 
-
-function follow(user_id){
-    
-    fetch(`/following/${user_id}`, {
-        headers: {'X-CSRFToken': csrftoken},
-        method: "POST"
-    })
-    .then(response => {
-        if (response.status == 201){
-            
-        }
-    })   
-
-}
 
 
 async function get_user_posts(user_id, pagnum){

@@ -7,7 +7,7 @@ class User(AbstractUser):
 
     following = models.ManyToManyField("self", blank=True, symmetrical=False)
 
-    def followers_count(self):
+    def follower_count(self):
         return  User.objects.filter(following=self).count()
 
 class Post(models.Model):

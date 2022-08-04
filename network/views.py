@@ -256,18 +256,19 @@ def following(request, user_id):
         return Response({"error": "Can't follow/unfollow self"}, status=400)
     current_user = request.user
     if request.method == "POST":
-        if user in current_user.following.all():
+        if current_user in user.following.all():
+            print(current_user.following.all())
             return Response({"error": "Already Following"}, status=400)
         # follow user
-        current_user.following.add(user)
-        current_user.save()
+        user.following.add(current_user)
+        user.save()
         return HttpResponse(status=201)
     if request.method == "PUT":
-        if user not in current_user.following.all():
+        if current_user not in user.following.all():
             return Response({"error": "Not Following"}, status=400)
         # unfollow user
-        current_user.following.remove(user)
-        current_user.save()
+        user.following.remove(current_user)
+        user.save()
         return HttpResponse(status=201)
     return Response({"error": "PUT & POST only"}, status=405)
 

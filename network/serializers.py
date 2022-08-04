@@ -3,6 +3,7 @@ from rest_framework import serializers
 
 from network.models import User, Comment, Post
 
+
 class PostSerializer(serializers.ModelSerializer):
     username = serializers.CharField(
         source='author.username',
@@ -16,15 +17,16 @@ class PostSerializer(serializers.ModelSerializer):
         model = Post
         fields = '__all__'
 
+
 class UserSerializer(serializers.ModelSerializer):
-    following_count = serializers.IntegerField(
+    followers_count = serializers.IntegerField(
             source='following.count', 
             read_only=True
         )
-    followers = serializers.IntegerField(
-            source='followers_count', 
+    following_count = serializers.IntegerField(
+            source='follower_count', 
             read_only=True
         )
     class Meta:
         model = User
-        fields = ['id', 'username', 'following', 'followers', 'following_count']
+        fields = ['id', 'username', 'following_count', 'following', 'followers_count']

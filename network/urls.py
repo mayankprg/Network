@@ -20,9 +20,10 @@ urlpatterns = [
     # path("editcomment/<int:comment_id>", views.edit_comment, name="editcomment"),
 
     path("profile/<int:user_id>", views.profile, name="profile"),
-    path("following/<int:user_id>", views.following, name="following"),
+    
     path("like/<int:post_id>", views.like, name="like"),
-
+    
+    path("following/<int:user_id>", views.following, name="following"),
     path("status", views.status, name="status"),
     path("post/<int:post_id>", views.post, name="post"),
     path("userpost/<int:user_id>/<int:page_num>", views.postPage, name="userpost")
