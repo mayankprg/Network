@@ -9,7 +9,7 @@ class PostSerializer(serializers.ModelSerializer):
         source='author.username',
         read_only=True
     )
-    likes = serializers.CharField(
+    likes_count = serializers.IntegerField(
         source='likes.count',
         read_only=True
     )

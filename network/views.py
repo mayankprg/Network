@@ -24,13 +24,12 @@ from .models import User, Post, Comment
 
 
  
-@api_view(['GET', 'POST'])
-@permission_classes((permissions.AllowAny,))
+@api_view(['GET'])
+# @permission_classes((permissions.AllowAny,))
 def postPage(request, user_id, page_num):
     try:
         user = User.objects.get(pk=user_id)
     except User.DoesNotExist:
-        
         return HttpResponse(status=404)
     # user has no posts
     if not Post.objects.filter(author=user).exists():
@@ -46,7 +45,6 @@ def postPage(request, user_id, page_num):
         "current_page": page.number,
         "results": [PostSerializer(page).data for page in page_obj]
     }
-    
     return Response(context)
 
 
@@ -64,10 +62,6 @@ class IndexView(ListView):
     template_name = 'network/index.html'
     ordering = ['-created']
     paginate_by = 10
-
-
-
-
 
 
 def login_view(request):
@@ -274,6 +268,7 @@ def following(request, user_id):
 
 
 @login_required
+@api_view(['PUT', 'POST'])
 def like(request, post_id):
     """ like and unlike post """
     try:
@@ -281,16 +276,18 @@ def like(request, post_id):
     except Post.DoesNotExist:
         return JsonResponse({"error": "Post Doesn't Exists"}, status=400)
     if request.method == "POST":
-        if request.user in post.likes:
+        if request.user in post.likes.all():
             return JsonResponse({"error": "Already liked"}, status=400)
         post.likes.add(request.user)
         post.save()
-        return HttpResponse(status=201)
+        data = PostSerializer(post).data
+        return Response(data,status=201)
     if request.method == "PUT":
-        if request.user not in post.likes:
+        if request.user not in post.likes.all():
             return JsonResponse({"error": "Not liked"}, status=400)
         post.likes.remove(request.user)
         post.save()
-        return HttpResponse(status=201)
+        data = PostSerializer(post).data
+        return Response(data,status=201)
     return JsonResponse({"error": "PUT & POST only"}, status=405)
 

@@ -1,29 +1,22 @@
 document.addEventListener('DOMContentLoaded', () => {
-
-    is_logged_in()
-    .then(data => {
-    if (data.status === "true"){
-        submitPost();
-        document.addEventListener('click', event => {
-            element = event.target;
-            if (element.id === "profile") {
-                let user_id = element.dataset.id;
-                history.pushState({user_id: user_id, page_num: 1}, "", `/?user=${user_id}&page=1`);
-                load_profile_page(user_id, 1)
-                // console.log(user_profile)
-                // console.log(user_posts)
-            }
-        })
-    } else {
-            document.addEventListener('click', event => {
-                element = event.target;
-                if (element.id === "profile") {
+    document.addEventListener('click', event => {
+        element = event.target;
+        if (element.id === "profile") {
+            is_logged_in()
+            .then (data => {
+                if (data.status === "true"){
+                    submitPost();
+                    let user_id = element.dataset.id;
+                    history.pushState({user_id: user_id, page_num: 1}, "", `/?user=${user_id}&page=1`);
+                    load_profile_page(user_id, 1)
+                } else {
                     document.querySelector('#login').click();
                 }
             })
-        }
+        }    
     })
 })
+   
 
 
 window.onpopstate = function (event) {
@@ -52,22 +45,20 @@ function like(){
 }
 
 
-
-
-async function  load_profile_page(user_id, page_num) {
+async function  load_profile_page(user_id, page_num = 1) {
     let user_profile = await profile(user_id);
-    // TODO repair load profile page in windowOnPopState
-    let user_posts = await get_user_posts(user_id, 1);
+    let user_posts = await get_user_posts(user_id, page_num);
     ChangeView("profile-view");
     load_profile(user_profile, user_posts);
 }
+
 
 function create_profile_div(user_profile){
     let profile_div = document.querySelector('.usr-div');
     profile_div.innerHTML = "";
 
     let follow_data_div = document.createElement('div');
-    follow_data_div.className = "follow-data";
+    follow_data_div.className = "follow-data flex";
     
     let name = document.createElement('p');
     let followers = document.createElement('p');
@@ -76,33 +67,135 @@ function create_profile_div(user_profile){
     let following_num = document.createElement('span');
 
     name.innerHTML = user_profile.username.toLowerCase().charAt(0).toUpperCase() + user_profile.username.slice(1,);
+    name.className ="fs-2 text fw-bold"
     followers_num.innerHTML = user_profile.followers_count;
     following_num.innerHTML = user_profile.following_count;
     followers.append("Followers", followers_num);
     following.append("Following", following_num);
     follow_data_div.append(followers, following);
     
-    is_logged_in()
-    .then(data => { 
-        if (data.user !== user_profile.id){
-            let btn = document.createElement('button');
-            if (user_profile.following.includes(data.user)) {
-                btn.className = "btn btn-secondary";
-                btn.innerHTML = "Unfollow";
-                console.log("here")
-                btn.onclick = () => {unfollow(user_profile.id)};
-            } else {
-                btn.className = "btn btn-success";
-                btn.innerHTML = "Follow";
-                btn.onclick = () => { console.log(user_profile.id); follow(user_profile.id)};
-            }
-            profile_div.append(name, follow_data_div, btn);
+    const user_id = document.querySelector("#user-id").dataset.id;
+    if (user_id != user_profile.id){
+        let btn = document.createElement('button');
+        if (user_profile.following.includes(parseInt(user_id))) {
+            btn.className = "btn btn-secondary";
+            btn.innerHTML = "Unfollow";
+            btn.onclick = () => {unfollow(user_profile.id)};
         } else {
-            profile_div.append(name, follow_data_div);
+            btn.className = "btn btn-success";
+            btn.innerHTML = "Follow";
+            btn.onclick = () => {follow(user_profile.id)};
         }
-    })
+        profile_div.append(name, follow_data_div, btn);
+    } else {
+        profile_div.append(name, follow_data_div);
+    }
+
 }
 
+// async function like_post(id) {
+//     let response = await fetch(`like/${id}`, {
+//         method: 'POST',
+//         headers: {'X-CSRFToken': csrftoken}
+//     });
+//     return await response.json();
+    
+// }
+ 
+
+async function like(id){
+    let like_div = document.querySelector(`#like-${id}`);
+    let likes = like_div.children[0];
+    let like_btn = like_div.children[1];
+    let response = await fetch(`like/${id}`, {
+        method: 'POST',
+        headers: {'X-CSRFToken': csrftoken}
+    });
+    let obj =  await response.json();
+    likes.innerHTML = obj.likes_count;
+    like_btn.innerHTML = "❤️";
+    like_btn.onclick = () => {dislike(id)};
+   
+}
+
+
+async function dislike(id){
+    let like_div = document.querySelector(`#like-${id}`);
+    let likes = like_div.children[0];
+    let like_btn = like_div.children[1];
+   
+    let response = await fetch(`like/${id}`, {
+        method: 'PUT',
+        headers: {'X-CSRFToken': csrftoken}
+    });
+    let obj =  await response.json();
+    likes.innerHTML = obj.likes_count;
+    like_btn.innerHTML =  "🖤";
+    console.log(obj)
+    like_btn.onclick = () => {like(id)};
+   
+}
+
+
+function create_post_div(posts){
+    const user_id = document.querySelector("#user-id").dataset.id;
+    const profile_view = document.querySelector('#profile-view');
+    posts.forEach(data=>{
+
+        let post_div = document.createElement('div');
+        post_div.className = "flex post";
+    
+        let name = document.createElement('p');
+        name.className = "fs-4 fw-semibold links";
+        name.innerHTML = data.username.toLowerCase().charAt(0).toUpperCase() + data.username.slice(1,)
+        post_div.append(name);
+
+        let body = document.createElement('p');
+        body.innerHTML = data.body;
+        post_div.append(body);
+
+        let like_div = document.createElement('p');
+        like_div.id = `like-${data.id}`
+        let likes = document.createElement('span');
+        let like_btn = document.createElement('span');
+
+        if (data.likes.includes(parseInt(user_id))){
+            likes.innerHTML = data.likes_count;
+            like_btn.innerHTML = "❤️";
+            like_btn.className = "like-btn links";
+            like_btn.onclick = () => {dislike(data.id)};
+        } else {
+            likes.innerHTML = data.likes_count;
+            like_btn.innerHTML =  "🖤";
+            like_btn.className = "like-btn links";
+            like_btn.onclick = () => {like(data.id)};
+        }
+        like_div.append(likes, like_btn);
+        post_div.append(like_div);
+        
+        let date = document.createElement('p');
+        date.className = "text-muted fs-6";
+        if (data.edited){
+            date.innerHTML = data.modified;
+        } else {
+            date.innerHTML = data.created;
+        }
+        post_div.append(date)
+
+        if (user_id == data.author){
+                let edit_btn = document.createElement("a");
+                edit_btn.className = "edit-link";
+                edit_btn.href = "#";
+                edit_btn.innerHTML = "Edit";
+                edit_btn.onclick = edit_post;
+                post_div.append(edit_btn)
+        }
+
+        profile_view.append(post_div);
+
+    });  
+
+}
 
 
 async function load_profile(user_profile, user_posts) {
@@ -118,48 +211,8 @@ async function load_profile(user_profile, user_posts) {
     profile_view.append(profile_div);
 
     create_profile_div(user_profile);
-    posts.forEach(data => {
-        let profile_name = document.createElement('p');
-        let body = document.createElement('p');
-        let date = document.createElement('p');
-        let likes = document.createElement('p');
-
-        let post_footer = document.createElement('div');
-        post_footer.className = "post-footer";
-        let span = document.createElement('span');
-        span.innerHTML = "❤️";
-        span.className = "like-btn links";
-        
-        profile_name.className = "fs-4 fw-semibold links";
-        body.dataset.id = data.id;
-        profile_name.innerHTML = data.username.toLowerCase().charAt(0).toUpperCase() + data.username.slice(1,);
-        body.innerHTML = data.body;
-        date.innerHTML = data.created;
-        likes.innerHTML = data.likes;
-        likes.append(span);
-        post_footer.append(likes, date);
-        let divider = document.createElement('div');
-        divider.className = "divider";
-        let div =  document.createElement('div');
-        div.className = "flex post";
-
-        is_logged_in()
-        .then(json_data => {
-            let user_id = json_data.user;
-            if (user_id === data.author){
-                let edit_btn = document.createElement("a");
-                edit_btn.className = "edit-link";
-                edit_btn.href = "#";
-                edit_btn.innerHTML = "Edit";
-                edit_btn.onclick = edit_post;
-                div.append(divider, profile_name, body, post_footer, edit_btn);
-            } else {
-                div.append(divider, profile_name, body, post_footer);
-            }
-        })
-        profile_view.append(div) 
-    });
-
+    
+    create_post_div(posts);
 
     let nav_list = document.createElement('ul');
     nav_list.className = "pagination";
@@ -203,10 +256,11 @@ async function load_profile(user_profile, user_posts) {
 }
 
 
+   
+
 
 
 function follow(user_id){
-    
     fetch(`/following/${user_id}`, {
         headers: {'X-CSRFToken': csrftoken},
         method: "POST"
@@ -215,14 +269,27 @@ function follow(user_id){
         if (response.status == 201){
             profile(user_id)
             .then( data => {
-                let profile_div = document.querySelector('.usr-div');
                 create_profile_div(data);
             })
         }
-    })   
-
+    })
 }
 
+
+function unfollow(user_id){
+    fetch(`/following/${user_id}`, {
+        headers: {'X-CSRFToken': csrftoken},
+        method: "PUT"
+    })
+    .then(response => {
+        if (response.status == 201){
+            profile(user_id)
+            .then( data => {
+                create_profile_div(data);
+            }) 
+        }
+    })   
+}
 
 
 async function edit_post(event){
@@ -293,8 +360,6 @@ async function profile(user_id){
     
     
 }
-
-
 
 
 function ChangeView(view){
@@ -392,7 +457,9 @@ async function get_post(post_id){
 
 
 async function get_user_posts(user_id, pagnum){
-    let response = await fetch(`userpost/${user_id}/${pagnum}`)
+    let response = await fetch(`userpost/${user_id}/${pagnum}`, {
+        headers: {'X-CSRFToken': csrftoken},
+    })
     return await response.json()
     
 }

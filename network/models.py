@@ -17,7 +17,7 @@ class Post(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now=True)
     edited = models.BooleanField(default=False)
-    likes = models.ManyToManyField("User", related_name="like_post")
+    likes = models.ManyToManyField("User", blank=True, related_name="like_post")
 
     def serialize(self):
         return {

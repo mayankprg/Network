@@ -88,10 +88,15 @@ nav > a {
 }
 
 .follow-data {
-  width: max-content;
+  width: 100%;
+  justify-content: space-between;
 }
 
 .usr-div {
   flex-direction: column;
   width: min(700px, 90vw);
+}
+
+.like-btn:hover {
+  text-decoration: none;
 }
