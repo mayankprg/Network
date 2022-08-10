@@ -145,7 +145,7 @@ def create_post(request):
     if request.method == "POST":
         # check for post length
         data = json.loads(request.body)
-        if len(data.get("post")) < 1 or len(data.get("post")) > 280:
+        if len(data.get("post")) < 1:
             return JsonResponse({"error": "post length =  1 to 280"}, status=400)
         # save user's post 
         body = data.get("post")
@@ -158,8 +158,8 @@ def create_post(request):
 
 @login_required
 @api_view(['PUT'])
-def post(request, post_id):
-    """ get particular post or edit post """
+def edit_post(request, post_id):
+    """ edit post """
     try:
         post = Post.objects.get(id=post_id)
     except Post.DoesNotExist:
@@ -171,14 +171,14 @@ def post(request, post_id):
         if request.user != post.author:
             return JsonResponse({"error": "Not Authorised"}, status=403)
         data = json.loads(request.body)
-        if len(data.get("post")) < 1 or len(data.get("post")) > 280:
+        if len(data.get("post")) < 1:
             return JsonResponse({"error": "post not valid"}, status=400)
         # save edited post 
         post.body = data.get("post")
         post.edited = True
         post.save()
         data = PostSerializer(post).data
-        return Response({"post": data}, status=201)
+        return Response(data, status=201)
     return JsonResponse({"error": "only PUT request accepted"}, status=405)
 
 
@@ -218,7 +218,7 @@ def edit_comment(request, comment_id):
         if comment.commentor != request.user:
             return HttpResponse(status=403)
         data = json.loads(request.body)
-        if len(data.get("comment")) < 1 or len(data.get("comment")) > 300:
+        if len(data.get("comment")) < 1:
             return HttpResponse(status=400)
         # save edited comment
         comment.comment = data.get("comment")

@@ -8,7 +8,6 @@
 
 <div id="posts-view" class="flex index-view ">
 
-    
     {% if user.is_authenticated %}
         <div id="post" class="form-floating">
             <form>
@@ -28,7 +27,7 @@
                 <p><span>{{post.likes.count}}</span> <span class="like-btn links">❤️</span></p>
             {% endif %}
             {% if post.edited %}
-                <p class="text-muted fs-6">{{post.modified}}</p>
+                <p class="text-muted fs-6">{{post.modified}} -Edited</p>
             {%else%}
                 <p class="text-muted fs-6">{{post.created}}</p>
             {%endif%}

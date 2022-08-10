@@ -34,7 +34,7 @@ async function is_logged_in(){
     return await response.json();
 }
 
-
+// for index page
 function like(){
     document.addEventListener('click', event => {
         element = event.target;
@@ -131,7 +131,6 @@ async function dislike(id){
     let obj =  await response.json();
     likes.innerHTML = obj.likes_count;
     like_btn.innerHTML =  "🖤";
-    console.log(obj)
     like_btn.onclick = () => {like(id)};
    
 }
@@ -144,6 +143,8 @@ function create_post_div(posts){
 
         let post_div = document.createElement('div');
         post_div.className = "flex post";
+        post_div.dataset.id = data.id;
+        post_div.id = `post-${data.id}`;
     
         let name = document.createElement('p');
         name.className = "fs-4 fw-semibold links";
@@ -155,7 +156,7 @@ function create_post_div(posts){
         post_div.append(body);
 
         let like_div = document.createElement('p');
-        like_div.id = `like-${data.id}`
+        like_div.id = `like-${data.id}`;
         let likes = document.createElement('span');
         let like_btn = document.createElement('span');
 
@@ -172,30 +173,72 @@ function create_post_div(posts){
         }
         like_div.append(likes, like_btn);
         post_div.append(like_div);
-        
+
         let date = document.createElement('p');
         date.className = "text-muted fs-6";
         if (data.edited){
-            date.innerHTML = data.modified;
+            date.innerHTML = `${data.modified} -Edited`;
         } else {
             date.innerHTML = data.created;
         }
         post_div.append(date)
-
         if (user_id == data.author){
                 let edit_btn = document.createElement("a");
                 edit_btn.className = "edit-link";
                 edit_btn.href = "#";
                 edit_btn.innerHTML = "Edit";
-                edit_btn.onclick = edit_post;
+                edit_btn.onclick = ()=>{edit_post(data.id)};
                 post_div.append(edit_btn)
         }
-
         profile_view.append(post_div);
-
     });  
 
 }
+
+async function edit_post(id){
+    let post_div = document.querySelector(`#post-${id}`);
+    let post_id = post_div.dataset.id;
+    let body = post_div.childNodes[1].innerText;
+    
+    const form = document.createElement('form');
+    const text_area = document.createElement('textarea');
+    text_area.cols = "50";
+    text_area.rows = "4";
+    text_area.className = "form-control";
+
+    const input_btn = document.createElement('input');
+    input_btn.type = "submit";
+    input_btn.className = "btn btn-primary mb-3";
+    const form_div = document.createElement('div');
+    form_div.className = "form-floating";
+
+    form.appendChild(text_area, input_btn);
+    form_div.appendChild(form);
+    
+    edit(id, body)
+    .then(data => {
+        console.log(data);
+    
+    })
+
+   
+
+
+}
+
+async function edit(post_id, body){
+    let response = await fetch(`/editpost/${post_id}`, {
+        method: "PUT",
+        headers: {'X-CSRFToken': csrftoken},
+        body: JSON.stringify({
+            post: body
+        })
+    })
+    return response.json();
+
+}
+
+
 
 
 async function load_profile(user_profile, user_posts) {
@@ -292,63 +335,20 @@ function unfollow(user_id){
 }
 
 
-async function edit_post(event){
-   
-    let post_element = event.target.parentElement;
-    
-    let user_id = post_element.parentElement.firstElementChild.dataset.id;
-    let parent = post_element.parentElement;
-    
-    let cancel_btn = document.createElement('a');
-    cancel_btn.href = "#";
-    cancel_btn.innerHTML = "Cancel";
-
-    let post_body = post_element.children.item(1).innerHTML;
-    let post_id = post_element.children.item(1).dataset.id
-
-    // const post_div = document.querySelector('#post');
-    // let text_area = post_div.children.item(0).children.item(0);
-    // let post_btn = post_div.children.item(0).children.item(1);
+// if (text_area.value == post_body) {
+    //         parent.replaceChild(post_element, post_div);
+    //     } else {
+    //         let body = text_area.value;
+    //         let response = await fetch(`/post/${post_id}`, { 
+    //            
+    //         })
+    //         let data = await response.json();
+    //         // console.log(data);
+    //         // send fetch call =- get current edited post 
+    //     }
+    // }
 
 
-    let text_area = document.createElement("textarea");
-    text_area.className = "form-control";
-
-    let post_div = document.createElement('div');
-    post_div.className = "form-floating";
-    
-    let form = document.createElement('form');
-
-    let post_btn = document.createElement('input');
-    post_btn.type = "submit";
-    post_btn.className = "btn btn-primary mb-3";
-
-    form.append(text_area, post_btn, cancel_btn);
-    post_div.append(form);
-
-    post_btn.onclick = async (event) => {
-        event.preventDefault();
-        if (text_area.value == post_body) {
-            parent.replaceChild(post_element, post_div);
-        } else {
-            let body = text_area.value;
-            let response = await fetch(`/post/${post_id}`, { 
-                method: "PUT",
-                headers: {'X-CSRFToken': csrftoken},
-                body: JSON.stringify({
-                    post: body
-                })
-            })
-            let data = await response.json();
-            // console.log(data);
-            // send fetch call =- get current edited post 
-        }
-    }
-
-    text_area.value = post_body;
-    parent.replaceChild(post_div, post_element);
-
-}
 
 
 async function profile(user_id){
@@ -441,15 +441,6 @@ async function all_posts(page){
    
 }
 
-
-async function get_post(post_id){
-    let response = await fetch(`/post/${post_id}`, {
-        method: "GET",
-        headers: {'X-CSRFToken': csrftoken},
-    })
-    let data = response.json();
-    console.log(data);
-}
 
 
 
