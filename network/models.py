@@ -20,21 +20,3 @@ class Post(models.Model):
     likes = models.ManyToManyField("User", blank=True, related_name="like_post")
 
 
-class Comment(models.Model):
-
-    comment = models.TextField(max_length=300, null=False)
-    post = models.ForeignKey("Post", on_delete=models.CASCADE, related_name="comments")
-    commentor = models.ForeignKey("User", on_delete=models.CASCADE, related_name="comment")
-    created = models.DateTimeField(auto_now_add=True)
-    modified = models.DateTimeField(auto_now=True)
-    edited = models.BooleanField(default=False)
-
-    def serialize(self):
-        return {
-            "id": self.id,
-            "comment": self.comment,
-            "created": self.created.strftime("%b %d %Y, %I:%M %p"),
-            "modified": self.modified.strftime("%b %d %Y, %I:%M %p"),
-            "edited": self.edited,
-            "commentor":  self.commentor.username,
-        }

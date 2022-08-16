@@ -12,7 +12,11 @@
         <div id="post" class="form-floating">
             <form>
                 <textarea class="form-control"  placeholder="What's happening" name="post" id="ta-post" cols="50" rows="4"></textarea>
-                <input type="submit" class="btn btn-primary mb-3" value="Post" id="sb-post">
+                <div> 
+                    <input type="submit" class="btn btn-primary mb-3" value="Post" id="sb-post">
+                    <a href="#">Cancel</a>
+                </div>
+               
             </form>
         </div>
     {% endif %}
@@ -21,7 +25,7 @@
     {% for post in page_obj %}
         <div class="flex post">
             <div class="divider"></div>
-            <p data-id={{post.author.id}} id="profile" class="fs-4 fw-semibold links">{{post.author|lower|capfirst}}</p>
+            <a href="#" data-id={{post.author.id}} id="profile" class="fs-4 fw-semibold links">{{post.author|lower|capfirst}}</a>
             <p>{{post.body}}</p>
             {% if user.is_authenticated %}
                 <p><span>{{post.likes.count}}</span> <span class="like-btn links">❤️</span></p>

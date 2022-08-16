@@ -23,6 +23,19 @@
   width: min(700px, 90vw);
 }
 
+div>form>a{
+  margin-left: 81%;
+  margin-bottom: 50%;
+ 
+} 
+
+.isDisabled {
+  color: currentColor;
+  cursor: not-allowed;
+  opacity: 0.5;
+  text-decoration: none;
+}
+
 .divider {
   border-bottom: 1px solid grey;
   width: 100%;
@@ -36,8 +49,12 @@
 }
 
 
-#post>form>input {
+form>div{
   margin-top: 10px;
+}
+
+div>a {
+  float: right;
 }
 
 .body {

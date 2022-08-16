@@ -1,31 +1,61 @@
 document.addEventListener('DOMContentLoaded', () => {
+    submitPost();
     document.addEventListener('click', event => {
         element = event.target;
         if (element.id === "profile") {
-            is_logged_in()
-            .then (data => {
-                if (data.status === "true"){
-                    submitPost();
-                    let user_id = element.dataset.id;
-                    history.pushState({user_id: user_id, page_num: 1}, "", `/?user=${user_id}&page=1`);
-                    load_profile_page(user_id, 1)
-                } else {
-                    document.querySelector('#login').click();
-                }
-            })
-        }    
+            event.preventDefault();
+            let user_id = element.dataset.id;
+            load_profile_page(user_id, 1);
+            // history.pushState({page: "index"}, "", `/`);  
+            history.pushState({user_id: user_id, page_num:1}, "", `/profile?user=${user_id}&page=${1}`);     
+        } else if (element.id === 'following-btn') {
+            event.preventDefault();
+            history.pushState({page: "following", page_num: 1}, "", `/following?page=1`);
+            follow_page();
+        }     
     })
 })
    
 
+// make every link a anchor tag 
+// prevent default that tag 
+
+async function following_data(page){
+    let response = await fetch(`/followingpage/${page}`,{
+        method: 'POST',
+        headers: {'X-CSRFToken': csrftoken},
+    });
+    return await response.json();
+}
+
+
+function follow_page(page_num=1){  
+    following_data(page_num)
+    .then(data => {
+        ChangeView("profile-view");
+        console.log(data)
+        create_post_div(data.results);
+        // create pagination 
+    })
+}
 
 window.onpopstate = function (event) {
    //doo
-   if (event.state.user_id){
-    let id = event.state.user_id;
-    let page = event.state.page_num 
-    load_profile_page(id, page);
-   }
+    if (event.state.page === "index"){
+        console.log("here")
+        window.location.reload(true)
+    } else if (event.state.user_id){
+        let id = event.state.user_id;
+        let page = event.state.page_num; 
+        load_profile_page(id, page);
+
+    } else if ( event.state.page === "following") {
+        let page = event.state.page_num;
+        follow_page(page);
+    } else {
+        
+    }
+    
 }
 
 
@@ -35,22 +65,27 @@ async function is_logged_in(){
 }
 
 // for index page
-function like(){
-    document.addEventListener('click', event => {
-        element = event.target;
-        if (element.className === "like-btn"){
+// function like(){
+//     document.addEventListener('click', event => {
+//         element = event.target;
+//         if (element.className === "like-btn"){
 
-        }
-    })
-}
+//         }
+//     })
+// }
 
 
 async function  load_profile_page(user_id, page_num = 1) {
     let user_profile = await profile(user_id);
-    let user_posts = await get_user_posts(user_id, page_num);
-    ChangeView("profile-view");
-    load_profile(user_profile, user_posts);
+    if (user_profile != null ){
+        let user_posts = await get_user_posts(user_id, page_num);
+        ChangeView("profile-view");
+        load_profile(user_profile, user_posts);
+    } else {
+        document.querySelector('#login').click();
+    }
 }
+   
 
 
 function create_profile_div(user_profile){
@@ -93,15 +128,7 @@ function create_profile_div(user_profile){
 
 }
 
-// async function like_post(id) {
-//     let response = await fetch(`like/${id}`, {
-//         method: 'POST',
-//         headers: {'X-CSRFToken': csrftoken}
-//     });
-//     return await response.json();
-    
-// }
- 
+
 
 async function like(id){
     let like_div = document.querySelector(`#like-${id}`);
@@ -146,9 +173,12 @@ function create_post_div(posts){
         post_div.dataset.id = data.id;
         post_div.id = `post-${data.id}`;
     
-        let name = document.createElement('p');
+        let name = document.createElement('a');
+        name.href = "#";
         name.className = "fs-4 fw-semibold links";
-        name.innerHTML = data.username.toLowerCase().charAt(0).toUpperCase() + data.username.slice(1,)
+        name.onclick = (e) => { e.preventDefault(); load_profile_page(data.author, 1);}
+        name.innerHTML = data.username.toLowerCase().charAt(0).toUpperCase() + data.username.slice(1,);
+
         post_div.append(name);
 
         let body = document.createElement('p');
@@ -187,7 +217,9 @@ function create_post_div(posts){
                 edit_btn.className = "edit-link";
                 edit_btn.href = "#";
                 edit_btn.innerHTML = "Edit";
-                edit_btn.onclick = ()=>{edit_post(data.id)};
+                if (!edit_btn.classList.contains('isDisabled')){    
+                    edit_btn.onclick = ()=>{edit_post(data.id)};
+                }
                 post_div.append(edit_btn)
         }
         profile_view.append(post_div);
@@ -195,36 +227,90 @@ function create_post_div(posts){
 
 }
 
+
+function disable_edit_btn(state){
+    let edit_post_btn = document.querySelectorAll('.edit-link')
+    if (state == true){
+        edit_post_btn.forEach(btn =>{
+            btn.classList.add('isDisabled');
+            btn.onclick = null;
+        });
+    } else if (state == false) {
+        edit_post_btn.forEach(btn =>{
+            btn.classList.remove('isDisabled');
+            let post_id = btn.parentElement.dataset.id;
+            btn.onclick = (e)=>{
+                e.preventDefault();
+                edit_post(post_id);
+            };
+        });
+    }
+}
+
+
+
 async function edit_post(id){
     let post_div = document.querySelector(`#post-${id}`);
     let post_id = post_div.dataset.id;
     let body = post_div.childNodes[1].innerText;
-    
+    disable_edit_btn(true);
     const form = document.createElement('form');
     const text_area = document.createElement('textarea');
-    text_area.cols = "50";
+    text_area.cols = "60";
     text_area.rows = "4";
     text_area.className = "form-control";
+    text_area.value = body;
 
     const input_btn = document.createElement('input');
     input_btn.type = "submit";
+    input_btn.value = "Save";
     input_btn.className = "btn btn-primary mb-3";
+    input_btn.disabled = true;
+
     const form_div = document.createElement('div');
+    form_div.id= "form";
     form_div.className = "form-floating";
 
-    form.appendChild(text_area, input_btn);
-    form_div.appendChild(form);
     
-    edit(id, body)
-    .then(data => {
-        console.log(data);
-    
-    })
-
+    const cancel_btn = document.createElement('a');
+    cancel_btn.href = "#";
+    cancel_btn.innerHTML = "Cancel";
+    cancel_btn.onclick = (e)=> {
+        e.preventDefault();
+        view.replaceChild(post_div,form_div);
+        disable_edit_btn(false);
+    }
    
+    const btn_div = document.createElement('div');
+    btn_div.append(input_btn, cancel_btn)
 
+    form.append(text_area, btn_div);
+    form_div.appendChild(form);
 
+    const view = document.querySelector('#profile-view');
+    view.replaceChild(form_div, post_div);
+
+    text_area.onkeyup = ()=> {
+       if (text_area.value.length < 1 || text_area.value == body){
+            input_btn.disabled = true;
+       } else {
+            input_btn.disabled = false;
+       }
+    }
+    input_btn.onclick = (e) => {
+        e.preventDefault();
+        let body = text_area.value;
+        edit(post_id, body)
+        .then(data => {
+            post_div.childNodes[1].innerHTML = data.body;
+            post_div.childNodes[2].childNodes[0].innerHTML = data.likes_count;
+            post_div.childNodes[3].innerHTML = `${data.modified} -Edited`
+            view.replaceChild(post_div ,form_div);
+            disable_edit_btn(false);
+        })
+    }
 }
+
 
 async function edit(post_id, body){
     let response = await fetch(`/editpost/${post_id}`, {
@@ -237,8 +323,6 @@ async function edit(post_id, body){
     return response.json();
 
 }
-
-
 
 
 async function load_profile(user_profile, user_posts) {
@@ -264,43 +348,51 @@ async function load_profile(user_profile, user_posts) {
     
     profile_view.appendChild(nav_list);
     if (user_posts.has_previous) {
-        let = previous_btn = document.createElement('li');
-        previous_btn.innerHTML = "Previous";
-        previous_btn.className = "page-link";
+        let previous_btn = document.createElement('li');
+        let previous_link = document.createElement('a'); 
+        previous_link.href = "#";
+        previous_link.innerHTML = "Previous";
+        previous_link.className = "page-link";
+        previous_btn.append(previous_link);
+
+        previous_btn.className = "page-item";
         previous_btn.dataset.page_num = parseInt(user_posts.current_page) - 1;
         previous_btn.dataset.user_id = user_profile.id;
-        nav_list.append(previous_btn)
+        nav_list.append(previous_btn);
 
-        previous_btn.onclick = async () => {
+        previous_link.onclick = async () => {
             let page_num = previous_btn.dataset.page_num;
             let user_id = previous_btn.dataset.user_id;
             let user_profile = await profile(user_id);
             let user_posts = await get_user_posts(user_id, page_num);
-            history.pushState({user_id: user_id, page_num:page_num}, "", `/?user=${user_id}&page=${page_num}`);
+            history.pushState({user_id: user_id, page_num:page_num}, "", `/profile?user=${user_id}&page=${page_num}`);
             load_profile(user_profile, user_posts);
+            document.body.scrollIntoView({behavior: "smooth"});
         }
     } 
     if (user_posts.has_next) {
-        let = next_btn = document.createElement('li');
-        next_btn.innerHTML = "Next";
-        next_btn.className = "page-link";
+        let next_btn = document.createElement('li');
+        let next_link = document.createElement('a'); 
+        next_link.href = "#";
+        next_link.innerHTML = "Next";
+        next_link.className = "page-link";
+        next_btn.append(next_link);
+
+        next_btn.className = "page-item";
         next_btn.dataset.page_num = parseInt(user_posts.current_page) + 1;
         next_btn.dataset.user_id = user_profile.id;
         nav_list.append(next_btn);
-        next_btn.onclick = async () => {
+        next_link.onclick = async () => {
             let page_num = next_btn.dataset.page_num;
             let user_id = next_btn.dataset.user_id;
             let user_profile = await profile(user_id);
             let user_posts = await get_user_posts(user_id, page_num);
-            history.pushState({user_id: user_id, page_num:page_num}, "", `/?user=${user_id}&page=${page_num}`);
+            history.pushState({user_id: user_id, page_num:page_num}, "", `/profile?user=${user_id}&page=${page_num}`);
             load_profile(user_profile, user_posts);
+            document.body.scrollIntoView({behavior: "smooth"});
         }
     } 
 }
-
-
-   
-
 
 
 function follow(user_id){
@@ -335,35 +427,20 @@ function unfollow(user_id){
 }
 
 
-// if (text_area.value == post_body) {
-    //         parent.replaceChild(post_element, post_div);
-    //     } else {
-    //         let body = text_area.value;
-    //         let response = await fetch(`/post/${post_id}`, { 
-    //            
-    //         })
-    //         let data = await response.json();
-    //         // console.log(data);
-    //         // send fetch call =- get current edited post 
-    //     }
-    // }
-
-
-
-
 async function profile(user_id){
-    
-    let res = await fetch(`/profile/${user_id}`,{
+    let response = await fetch(`/profile/${user_id}`,{
         headers: {'X-CSRFToken': csrftoken},
-    })   
-    return await res.json();
-    
-    
+    })
+    if (response.status == 403) {
+        return null;
+    } else {
+        return await response.json();
+    }   
+       
 }
 
 
 function ChangeView(view){
-
     if (view === "profile-view"){
         document.querySelector('#profile-view').style.display = 'flex';
         document.querySelector('#posts-view').style.display = 'none';
@@ -372,13 +449,12 @@ function ChangeView(view){
         document.querySelector('#profile-view').style.display = 'none';
         document.querySelector('#posts-view').style.display = 'flex';
     }
-
-        
-
 }
 
+
 function submitPost() {
-    document.querySelector('#sb-post').disabled = true; 
+    if (document.querySelector('#sb-post') != null){
+        document.querySelector('#sb-post').disabled = true; 
         document.querySelector('#ta-post').onkeyup = () => {
             if (document.querySelector('#ta-post').value.length > 0){
                 document.querySelector('#sb-post').disabled = false;
@@ -387,6 +463,8 @@ function submitPost() {
             }
         }
         document.querySelector('#sb-post').onclick = new_post;
+    }
+   
 }
 
 
@@ -433,29 +511,10 @@ async function create_post(post_data){
 
 
 
-async function all_posts(page){
-   
-    let response = await fetch(`/allposts/${page}`);
-    let data = await response.json();
-    console.log(data)
-   
-}
-
-
-
-
-
-
-
 async function get_user_posts(user_id, pagnum){
     let response = await fetch(`userpost/${user_id}/${pagnum}`, {
         headers: {'X-CSRFToken': csrftoken},
     })
     return await response.json()
-    
 }
 
-
-
-// first work on design and add 
-// lots of lorem ispsum posts 

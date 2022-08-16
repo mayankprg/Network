@@ -18,14 +18,11 @@ from rest_framework import permissions
 from network.serializers import PostSerializer, UserSerializer
 
 
-from .models import User, Post, Comment
-
-
-
+from .models import User, Post
 
  
 @api_view(['GET'])
-# @permission_classes((permissions.AllowAny,))
+@login_required
 def postPage(request, user_id, page_num):
     try:
         user = User.objects.get(pk=user_id)
@@ -118,25 +115,32 @@ def register(request):
     else:
         return render(request, "network/register.html")
 
+@api_view(['POST'])
+def following_page(request, page_num):
+    """ get post of followed user """
 
-def all_posts(request, page):
-    """ get all posts of particular page """
-    if not str(page):
-        return JsonResponse({"error": "Choose All Post/Following's post"}, status=400)
-    if str(page) == "allposts":
-        # get all posts
-        posts = Post.objects.all().order_by("created")
-        return  JsonResponse([post.serialize() for post in posts], safe=False) 
-    if request.user.is_authenticated and str(page) == "following": 
-        if not User.objects.filter(following=request.user).exists():
-             return  JsonResponse({"error": "Not following anyone"}, status=400)
+    if request.user.is_authenticated: 
+        current_user = request.user
+        if not User.objects.filter(following=current_user).exists():
+            return  Response({"error": "Not following anyone"}, status=404)
         # get posts of followed users
-        following = User.objects.filter(following=request.user)
+        following = User.objects.filter(following=current_user)
         posts = Post.objects.filter(author=following[0])
         for user in following[1:]:
             posts |= Post.objects.filter(author=user)
-        return  JsonResponse([post.serialize() for post in posts], safe=False)
-    return  JsonResponse({"error": "Login Required/ following"}, status=401)
+        posts = posts.all().order_by("created")
+        posts_obj = Paginator(posts, 10)
+        page = posts_obj.page(page_num)
+        page_obj = page.object_list
+        context = {
+            "has_next": page.has_next(),
+            "has_previous": page.has_previous(),
+            "page_count": posts_obj.num_pages,
+            "current_page": page.number,
+            "results": [PostSerializer(page).data for page in page_obj]
+        }
+        return Response(context)
+    return  Response({"error": "Login Required"}, status=401)
 
 
 @login_required
@@ -146,7 +150,7 @@ def create_post(request):
         # check for post length
         data = json.loads(request.body)
         if len(data.get("post")) < 1:
-            return JsonResponse({"error": "post length =  1 to 280"}, status=400)
+            return JsonResponse({"error": "post length less than 1 "}, status=400)
         # save user's post 
         body = data.get("post")
         post = Post(body=body, author=request.user)
@@ -182,50 +186,6 @@ def edit_post(request, post_id):
     return JsonResponse({"error": "only PUT request accepted"}, status=405)
 
 
-
-@login_required
-def comment(request, post_id):
-    """ get all comments or create a new comment """
-    try:
-        post = Post.objects.get(pk=post_id)
-    except Post.DoesNotExist:
-        return JsonResponse({"error": "Post Doesn't Exists"}, status=400)
-    if request.method == "GET":
-        # get all comments for particular post
-        comments = Comment.objects.all()
-        return JsonResponse([comment.serialize() for comment in comments], safe=False)
-    if request.method == "POST":
-        data = json.loads(request.body)
-        if len(data.get("comment")) < 1 or len(data.get("comment")) > 300:
-            return HttpResponse(status=400)
-        # save new comment
-        comment = Comment(comment=data.get("comment"), post=post, commentor=request.user)
-        comment.save()
-        return HttpResponse(status=201)
-    return JsonResponse({"error": "POST & GET only"}, status=405)
-
-
-
-@login_required
-def edit_comment(request, comment_id):
-    """ Edit the exsiting comment """
-    try:
-        comment = Comment.objects.get(id=comment_id)
-    except Comment.DoesNotExist:
-        return JsonResponse({"error": "Comment Doesn't Exists"}, status=400)
-    if request.method == "PUT":
-        # only for author of the comment
-        if comment.commentor != request.user:
-            return HttpResponse(status=403)
-        data = json.loads(request.body)
-        if len(data.get("comment")) < 1:
-            return HttpResponse(status=400)
-        # save edited comment
-        comment.comment = data.get("comment")
-        comment.edited = True
-        comment.save()
-        return HttpResponse(status=201)
-    return JsonResponse({"error": "PUT only"}, status=405)
 
 
 @api_view(['GET'])

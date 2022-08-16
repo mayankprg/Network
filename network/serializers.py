@@ -1,7 +1,6 @@
-from dataclasses import field
 from rest_framework import serializers
 
-from network.models import User, Comment, Post
+from network.models import User, Post
 
 
 class PostSerializer(serializers.ModelSerializer):
@@ -12,6 +11,12 @@ class PostSerializer(serializers.ModelSerializer):
     likes_count = serializers.IntegerField(
         source='likes.count',
         read_only=True
+    )
+    created = serializers.DateTimeField(
+        format="%b %d %Y, %I:%M %p"
+    )
+    modified = serializers.DateTimeField(
+        format="%b %d %Y, %I:%M %p"
     )
     class Meta:
         model = Post

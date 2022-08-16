@@ -13,12 +13,9 @@ urlpatterns = [
     path("register", views.register, name="register"),
  
     # api
-    path("allposts/<str:page>", views.all_posts, name="allposts"),
+    path("followingpage/<int:page_num>", views.following_page, name="followingpage"),
     path("newpost", views.create_post, name="newpost"),
    
-    # path("comment/<int:post_id>", views.comment, name="comment"),
-    # path("editcomment/<int:comment_id>", views.edit_comment, name="editcomment"),
-
     path("profile/<int:user_id>", views.profile, name="profile"),
     
     path("like/<int:post_id>", views.like, name="like"),
