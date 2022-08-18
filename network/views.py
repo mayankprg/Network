@@ -17,7 +17,6 @@ from rest_framework import permissions
 
 from network.serializers import PostSerializer, UserSerializer
 
-
 from .models import User, Post
 
  
@@ -43,8 +42,6 @@ def postPage(request, user_id, page_num):
         "results": [PostSerializer(page).data for page in page_obj]
     }
     return Response(context)
-
-
 
 
 # def index(request):
@@ -82,7 +79,6 @@ def login_view(request):
 def logout_view(request):
     logout(request)
     return HttpResponseRedirect(reverse("index"))
-
 
 
 def status(request):

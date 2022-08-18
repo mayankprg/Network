@@ -7,7 +7,8 @@ document.addEventListener('DOMContentLoaded', () => {
             let user_id = element.dataset.id;
             load_profile_page(user_id, 1);
             // history.pushState({page: "index"}, "", `/`);  
-            history.pushState({user_id: user_id, page_num:1}, "", `/profile?user=${user_id}&page=${1}`);     
+            history.pushState({user_id: user_id, page_num:1}, "", `/profile?user=${user_id}&page=${1}`); 
+            
         } else if (element.id === 'following-btn') {
             event.preventDefault();
             history.pushState({page: "following", page_num: 1}, "", `/following?page=1`);
@@ -81,6 +82,7 @@ async function  load_profile_page(user_id, page_num = 1) {
         let user_posts = await get_user_posts(user_id, page_num);
         ChangeView("profile-view");
         load_profile(user_profile, user_posts);
+        document.body.scrollIntoView({behavior: "smooth"});
     } else {
         document.querySelector('#login').click();
     }
@@ -176,7 +178,7 @@ function create_post_div(posts){
         let name = document.createElement('a');
         name.href = "#";
         name.className = "fs-4 fw-semibold links";
-        name.onclick = (e) => { e.preventDefault(); load_profile_page(data.author, 1);}
+        name.onclick = (e) => { e.preventDefault();  load_profile_page(data.author, 1);}
         name.innerHTML = data.username.toLowerCase().charAt(0).toUpperCase() + data.username.slice(1,);
 
         post_div.append(name);
@@ -226,6 +228,7 @@ function create_post_div(posts){
     });  
 
 }
+
 
 
 function disable_edit_btn(state){
@@ -347,6 +350,7 @@ async function load_profile(user_profile, user_posts) {
     // let nav = document.createElement('nav');
     
     profile_view.appendChild(nav_list);
+    
     if (user_posts.has_previous) {
         let previous_btn = document.createElement('li');
         let previous_link = document.createElement('a'); 
@@ -391,7 +395,8 @@ async function load_profile(user_profile, user_posts) {
             load_profile(user_profile, user_posts);
             document.body.scrollIntoView({behavior: "smooth"});
         }
-    } 
+    }
+    
 }
 
 
@@ -454,11 +459,15 @@ function ChangeView(view){
 
 function submitPost() {
     if (document.querySelector('#sb-post') != null){
-        document.querySelector('#sb-post').disabled = true; 
+        document.querySelector('#sb-post').disabled = true;
+        document.querySelector('#cancel-form-btn').classList.add("isDisabled"); 
         document.querySelector('#ta-post').onkeyup = () => {
             if (document.querySelector('#ta-post').value.length > 0){
                 document.querySelector('#sb-post').disabled = false;
+                document.querySelector('#cancel-form-btn').classList.remove("isDisabled");
+                document.querySelector('#cancel-form-btn').onclick = cancel_post
             } else {
+                document.querySelector('#cancel-form-btn').classList.add("isDisabled");
                 document.querySelector('#sb-post').disabled = true;
             }
         }
@@ -466,6 +475,14 @@ function submitPost() {
     }
    
 }
+
+function cancel_post(e){
+    e.preventDefault()
+    document.querySelector('#ta-post').value = "";
+    document.querySelector('#cancel-form-btn').classList.add("isDisabled");
+    document.querySelector('#sb-post').disabled = true;
+}
+
 
 
 function getCookie(name) {
@@ -507,8 +524,6 @@ async function create_post(post_data){
     
     
 }
-
-
 
 
 async function get_user_posts(user_id, pagnum){

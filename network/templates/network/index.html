@@ -1,30 +1,32 @@
 {% extends "network/layout.html" %}
 
 {% block body %}
-<div id="profile-view" class="index-view">
-    
-    
-</div>    
+<main class="main flex">
+    <div id="profile-view" class="index-view">
+        
+        
+    </div>    
 
-<div id="posts-view" class="flex index-view ">
-
+    <div id="posts-view" class="flex index-view ">
+    
     {% if user.is_authenticated %}
-        <div id="post" class="form-floating">
-            <form>
-                <textarea class="form-control"  placeholder="What's happening" name="post" id="ta-post" cols="50" rows="4"></textarea>
-                <div> 
-                    <input type="submit" class="btn btn-primary mb-3" value="Post" id="sb-post">
-                    <a href="#">Cancel</a>
-                </div>
-               
-            </form>
-        </div>
+      
+            <div id="post" class="form-floating">
+                <form>
+                    <textarea class="form-control"  placeholder="What's happening" name="post" id="ta-post" cols="50" rows="4"></textarea>
+                    <div> 
+                        <input type="submit" class="btn btn-primary mb-3" value="Post" id="sb-post">
+                        <a id="cancel-form-btn" class="" href="#">Cancel</a>
+                    </div>
+                </form>
+            </div>
+  
     {% endif %}
 
 
     {% for post in page_obj %}
         <div class="flex post">
-            <div class="divider"></div>
+            
             <a href="#" data-id={{post.author.id}} id="profile" class="fs-4 fw-semibold links">{{post.author|lower|capfirst}}</a>
             <p>{{post.body}}</p>
             {% if user.is_authenticated %}
@@ -39,22 +41,22 @@
         </div>
     {% endfor %}         
 
-    <nav aria-label="Page navigation example">
-        <ul class="pagination">
-            {% if page_obj.has_previous %}
+        <nav aria-label="Page navigation example">
+            <ul class="pagination">
+                {% if page_obj.has_previous %}
+                    
+                    <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a></li>
+                    {%else%}
+                    <li class="page-item"><a class="page-link disabled" href="#">Previous</a></li>
+                {% endif %}
                 
-                <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a></li>
-                {%else%}
-                <li class="page-item"><a class="page-link disabled" href="#">Previous</a></li>
-            {% endif %}
-            
-            {% if page_obj.has_next %}
-                <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a></li>
-                {%else%}
-                <li class="page-item"><a class="page-link disabled" href="#">Next</a></li>
-            {% endif %}
-        </ul>
-    </nav>
-</div>
-
+                {% if page_obj.has_next %}
+                    <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a></li>
+                    {%else%}
+                    <li class="page-item"><a class="page-link disabled" href="#">Next</a></li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+</main>
 {% endblock %}
